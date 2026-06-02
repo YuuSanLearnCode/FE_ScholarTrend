@@ -1,6 +1,6 @@
 import StatsCard from '../components/StatsCard'
 import { quickStats, trendingTopics } from '../data/mockData'
-import styles from './DashboardPage.module.css'
+import styles from './dashboardPage.module.css'
 
 function DashboardPage() {
   return (

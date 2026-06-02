@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { papers } from '../data/mockData'
-import styles from './PaperDetailPage.module.css'
+import { papers } from '../../data/mockData'
+import styles from './paperDetailPage.module.css'
 
 function PaperDetailPage() {
   const { paperId } = useParams()

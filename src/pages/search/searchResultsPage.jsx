@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import SearchResultsList from '../components/SearchResultsList'
-import { papers } from '../data/mockData'
-import styles from './SearchResultsPage.module.css'
+import SearchResultsList from '../../components/SearchResultsList'
+import { papers } from '../../data/mockData'
+import styles from './searchResultsPage.module.css'
 
 function SearchResultsPage() {
   const [searchParams] = useSearchParams()

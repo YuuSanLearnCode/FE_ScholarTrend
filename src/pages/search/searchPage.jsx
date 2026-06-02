@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import styles from './SearchPage.module.css'
+import styles from './searchPage.module.css'
 
 function SearchPage() {
   const navigate = useNavigate()
@@ -9,7 +9,7 @@ function SearchPage() {
   const handleSubmit = (event) => {
     event.preventDefault()
     const params = new URLSearchParams(form)
-    navigate(`/search-results?${params.toString()}`)
+    navigate(`/search/results?${params.toString()}`)
   }
 
   return (

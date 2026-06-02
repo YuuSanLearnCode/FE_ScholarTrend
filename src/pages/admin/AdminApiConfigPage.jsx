@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import styles from './AdminApiConfigPage.module.css'
+import styles from './adminApiConfigPage.module.css'
 
 function AdminApiConfigPage() {
   const [config, setConfig] = useState({

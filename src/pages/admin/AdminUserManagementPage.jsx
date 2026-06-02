@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { adminUsers } from '../../data/mockData'
-import styles from './AdminUserManagementPage.module.css'
+import styles from './adminUserManagementPage.module.css'
 
 function AdminUserManagementPage() {
   const [users, setUsers] = useState(adminUsers)

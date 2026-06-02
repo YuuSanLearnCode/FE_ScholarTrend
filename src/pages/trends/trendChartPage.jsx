@@ -10,8 +10,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { trendByYear } from '../data/mockData'
-import styles from './TrendChartPage.module.css'
+import { trendByYear } from '../../data/mockData'
+import styles from './trendChartPage.module.css'
 
 function TrendChartPage() {
   const [chartType, setChartType] = useState('line')

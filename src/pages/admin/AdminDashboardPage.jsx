@@ -1,5 +1,5 @@
 import StatsCard from '../../components/StatsCard'
-import styles from './AdminDashboardPage.module.css'
+import styles from './adminDashboardPage.module.css'
 
 const adminStats = [
   { label: 'Total Users', value: '1,248' },

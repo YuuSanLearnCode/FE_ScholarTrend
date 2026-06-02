@@ -1,20 +1,26 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth'
-import styles from './Layout.module.css'
+import { NavLink, Outlet } from "react-router-dom";
+import styles from "./layout.module.css";
 
 const navItems = [
-  { to: '/', label: 'Home' },
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/search', label: 'Search' },
-  { to: '/trends', label: 'Trends' },
-  { to: '/bookmarks', label: 'Bookmarks' },
-  { to: '/following', label: 'Following' },
-  { to: '/notifications', label: 'Notifications' },
-  { to: '/admin', label: 'Admin' },
-]
+  { to: "/", label: "Home" },
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/search", label: "Search" },
+  { to: "/trends", label: "Trends" },
+  { to: "/bookmarks", label: "Bookmarks" },
+  { to: "/following", label: "Following" },
+  { to: "/notifications", label: "Notifications" },
+];
 
 function Layout() {
-  const { isAuthenticated, user, logout } = useAuth()
+  const token = localStorage.getItem("token");
+  const userName = localStorage.getItem("userName");
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
+    window.location.href = "/";
+  };
 
   return (
     <div>
@@ -25,17 +31,23 @@ function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => (isActive ? styles.active : styles.link)}
+              className={({ isActive }) =>
+                isActive ? styles.active : styles.link
+              }
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
         <div className={styles.authActions}>
-          {isAuthenticated ? (
+          {token ? (
             <>
-              <span className={styles.userName}>{user?.name}</span>
-              <button type="button" className={styles.button} onClick={logout}>
+              <span className={styles.userName}>{userName}</span>
+              <button
+                type="button"
+                className={styles.button}
+                onClick={handleLogout}
+              >
                 Logout
               </button>
             </>
@@ -55,7 +67,7 @@ function Layout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }
 
-export default Layout
+export default Layout;

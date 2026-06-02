@@ -1,5 +1,5 @@
-import { notifications } from '../data/mockData'
-import styles from './SimpleListPage.module.css'
+import { notifications } from '../../data/mockData'
+import styles from './simpleListPage.module.css'
 
 function NotificationsPage() {
   return (

@@ -1,5 +1,5 @@
-import SearchResultsList from '../components/SearchResultsList'
-import { papers } from '../data/mockData'
+import SearchResultsList from '../../components/SearchResultsList'
+import { papers } from '../../data/mockData'
 
 function BookmarksPage() {
   return (
