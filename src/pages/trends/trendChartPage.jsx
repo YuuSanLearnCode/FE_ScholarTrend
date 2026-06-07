@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -10,11 +10,45 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { trendByYear } from '../../data/mockData'
+import { getTrendByYear } from '../../services/trendService'
 import styles from './trendChartPage.module.css'
 
 function TrendChartPage() {
   const [chartType, setChartType] = useState('line')
+  const [trendData, setTrendData] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function fetchTrend() {
+      try {
+        const result = await getTrendByYear()
+        setTrendData(result ?? [])
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load trend data')
+        setTrendData([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchTrend()
+  }, [])
+
+  if (loading) {
+    return (
+      <section className={styles.panel}>
+        <p>Loading...</p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className={styles.panel}>
+        <p>{error}</p>
+      </section>
+    )
+  }
 
   return (
     <section className={styles.panel}>
@@ -31,7 +65,7 @@ function TrendChartPage() {
       <div className={styles.chartWrap}>
         <ResponsiveContainer width="100%" height="100%">
           {chartType === 'line' ? (
-            <LineChart data={trendByYear}>
+            <LineChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="year" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
               <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
@@ -61,7 +95,7 @@ function TrendChartPage() {
               </defs>
             </LineChart>
           ) : (
-            <BarChart data={trendByYear}>
+            <BarChart data={trendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
               <XAxis dataKey="year" stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />
               <YAxis stroke="#64748b" tick={{ fill: '#94a3b8', fontSize: 12 }} />

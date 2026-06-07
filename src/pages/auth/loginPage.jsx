@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { validateEmail, validatePassword } from "../../utils/validation";
+import { login } from "../../services/authService";
 import styles from "./auth.module.css";
 
 function LoginPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!validateEmail(form.email)) {
@@ -21,13 +23,18 @@ function LoginPage() {
       return;
     }
 
-    // TODO: Replace with real API call
-    // For now, fake login with localStorage
-    localStorage.setItem("token", "fake-jwt-token");
-    localStorage.setItem("userName", form.email.split("@")[0]);
-    localStorage.setItem("userRole", "researcher");
+    setLoading(true);
     setError("");
-    navigate("/dashboard");
+
+    try {
+      await login(form);
+      navigate("/dashboard");
+    } catch (err) {
+      const msg = err.response?.data?.message || "Login failed. Please check your credentials.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,8 +67,8 @@ function LoginPage() {
             />
           </div>
           {error && <p className={styles.error}>{error}</p>}
-          <button type="submit" className={styles.button}>
-            Sign In
+          <button type="submit" className={styles.button} disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
         <p className={styles.footer}>

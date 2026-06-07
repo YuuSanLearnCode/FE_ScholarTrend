@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import StatsCard from '../components/StatsCard'
-import { quickStats, trendingTopics } from '../data/mockData'
+import { getTrendOverview, getKeywordTrends } from '../services/trendService'
 import styles from './dashboardPage.module.css'
 
 const quickActions = [
@@ -11,6 +12,60 @@ const quickActions = [
 
 function DashboardPage() {
   const userName = localStorage.getItem('userName') || 'Researcher'
+  const [quickStats, setQuickStats] = useState([])
+  const [trendingTopics, setTrendingTopics] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const [overview, keywords] = await Promise.all([
+          getTrendOverview(),
+          getKeywordTrends(),
+        ])
+
+        // Convert overview object to stats array for StatsCard
+        if (overview) {
+          const statsArr = Object.entries(overview).map(([key, value]) => ({
+            label: key.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase()),
+            value: String(value),
+          }))
+          setQuickStats(statsArr)
+        }
+
+        // Keywords could be an array of strings or objects
+        if (Array.isArray(keywords)) {
+          setTrendingTopics(
+            keywords.map((k) => (typeof k === 'string' ? k : k.keyword || k.name || k.topic || ''))
+          )
+        }
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load dashboard data')
+        setQuickStats([])
+        setTrendingTopics([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDashboardData()
+  }, [])
+
+  if (loading) {
+    return (
+      <section className={styles.dashboard}>
+        <p>Loading...</p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className={styles.dashboard}>
+        <p>{error}</p>
+      </section>
+    )
+  }
 
   return (
     <section className={styles.dashboard}>

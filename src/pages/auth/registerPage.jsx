@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { validateEmail, validatePassword } from "../../utils/validation";
+import { register } from "../../services/authService";
 import styles from "./auth.module.css";
 
 function RegisterPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    institution: "",
+    researchField: "",
+  });
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!form.name.trim()) {
-      setError("Please enter your name.");
+    if (!form.fullName.trim()) {
+      setError("Please enter your full name.");
       return;
     }
 
@@ -26,12 +34,24 @@ function RegisterPage() {
       return;
     }
 
-    // TODO: Replace with real API call
-    localStorage.setItem("token", "fake-jwt-token");
-    localStorage.setItem("userName", form.name);
-    localStorage.setItem("userRole", form.role);
+    setLoading(true);
     setError("");
-    navigate("/dashboard");
+
+    try {
+      await register(form);
+      navigate("/dashboard");
+    } catch (err) {
+      const data = err.response?.data;
+      // Handle validation errors object from BE
+      if (data?.errors) {
+        const firstError = Object.values(data.errors).flat()[0];
+        setError(firstError || "Registration failed.");
+      } else {
+        setError(data?.message || "Registration failed. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,9 +67,9 @@ function RegisterPage() {
               id="reg-name"
               className={styles.input}
               type="text"
-              placeholder="John Doe"
-              value={form.name}
-              onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Nguyen Van A"
+              value={form.fullName}
+              onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
             />
           </div>
           <div className={styles.fieldGroup}>
@@ -75,20 +95,30 @@ function RegisterPage() {
             />
           </div>
           <div className={styles.fieldGroup}>
-            <label htmlFor="reg-role" className={styles.label}>Role</label>
-            <select
-              id="reg-role"
+            <label htmlFor="reg-institution" className={styles.label}>Institution (optional)</label>
+            <input
+              id="reg-institution"
               className={styles.input}
-              value={form.role}
-              onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value }))}
-            >
-              <option value="student">Student / Lecturer</option>
-              <option value="researcher">Researcher</option>
-            </select>
+              type="text"
+              placeholder="FPT University"
+              value={form.institution}
+              onChange={(e) => setForm((prev) => ({ ...prev, institution: e.target.value }))}
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label htmlFor="reg-field" className={styles.label}>Research Field (optional)</label>
+            <input
+              id="reg-field"
+              className={styles.input}
+              type="text"
+              placeholder="Artificial Intelligence"
+              value={form.researchField}
+              onChange={(e) => setForm((prev) => ({ ...prev, researchField: e.target.value }))}
+            />
           </div>
           {error && <p className={styles.error}>{error}</p>}
-          <button type="submit" className={styles.button}>
-            Create Account
+          <button type="submit" className={styles.button} disabled={loading}>
+            {loading ? "Creating account..." : "Create Account"}
           </button>
         </form>
         <p className={styles.footer}>

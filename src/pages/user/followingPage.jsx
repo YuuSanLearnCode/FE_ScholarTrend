@@ -1,18 +1,115 @@
-import { following } from '../../data/mockData'
+import { useEffect, useState } from 'react'
+import { getFollowedTopics, getFollowedJournals, unfollowTopic, unfollowJournal } from '../../services/followService'
 import styles from './simpleListPage.module.css'
 
 function FollowingPage() {
+  const [topics, setTopics] = useState([])
+  const [journals, setJournals] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function fetchFollowing() {
+      try {
+        const [topicsResult, journalsResult] = await Promise.all([
+          getFollowedTopics(),
+          getFollowedJournals(),
+        ])
+        setTopics(topicsResult ?? [])
+        setJournals(journalsResult ?? [])
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load following data')
+        setTopics([])
+        setJournals([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchFollowing()
+  }, [])
+
+  const handleUnfollowTopic = async (topicId) => {
+    try {
+      await unfollowTopic(topicId)
+      setTopics((prev) => prev.filter((t) => (t.id ?? t) !== topicId))
+    } catch (err) {
+      // silently fail
+    }
+  }
+
+  const handleUnfollowJournal = async (journalId) => {
+    try {
+      await unfollowJournal(journalId)
+      setJournals((prev) => prev.filter((j) => (j.id ?? j) !== journalId))
+    } catch (err) {
+      // silently fail
+    }
+  }
+
+  if (loading) {
+    return (
+      <section className={styles.panel}>
+        <p>Loading...</p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className={styles.panel}>
+        <p>{error}</p>
+      </section>
+    )
+  }
+
   return (
     <section className={styles.panel}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>My Following</h1>
       </div>
+
+      {/* Topics Section */}
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.1rem', marginTop: '1rem' }}>Topics</h2>
       <ul className={styles.list}>
-        {following.map((item) => (
-          <li key={item} className={styles.listItem}>
-            <span className={styles.listItemText}>{item}</span>
+        {topics.length === 0 && (
+          <li className={styles.listItem}>
+            <span className={styles.listItemText}>No followed topics yet.</span>
           </li>
-        ))}
+        )}
+        {topics.map((item) => {
+          const id = item.id ?? item
+          const name = item.name ?? item.topic ?? String(item)
+          return (
+            <li key={id} className={styles.listItem}>
+              <span className={styles.listItemText}>{name}</span>
+              <button type="button" onClick={() => handleUnfollowTopic(id)} style={{ marginLeft: 'auto', cursor: 'pointer', background: 'none', border: 'none', color: '#f87171' }}>
+                Unfollow
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* Journals Section */}
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.1rem', marginTop: '1.5rem' }}>Journals</h2>
+      <ul className={styles.list}>
+        {journals.length === 0 && (
+          <li className={styles.listItem}>
+            <span className={styles.listItemText}>No followed journals yet.</span>
+          </li>
+        )}
+        {journals.map((item) => {
+          const id = item.id ?? item
+          const name = item.name ?? item.journal ?? String(item)
+          return (
+            <li key={id} className={styles.listItem}>
+              <span className={styles.listItemText}>{name}</span>
+              <button type="button" onClick={() => handleUnfollowJournal(id)} style={{ marginLeft: 'auto', cursor: 'pointer', background: 'none', border: 'none', color: '#f87171' }}>
+                Unfollow
+              </button>
+            </li>
+          )
+        })}
       </ul>
     </section>
   )

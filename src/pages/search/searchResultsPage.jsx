@@ -1,40 +1,65 @@
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import SearchResultsList from '../../components/SearchResultsList'
-import { papers } from '../../data/mockData'
+import { searchPapers } from '../../services/paperService'
 import styles from './searchResultsPage.module.css'
 
 function SearchResultsPage() {
   const [searchParams] = useSearchParams()
-  const keyword = searchParams.get('keyword')?.toLowerCase().trim() ?? ''
-  const author = searchParams.get('author')?.toLowerCase().trim() ?? ''
-  const journal = searchParams.get('journal')?.toLowerCase().trim() ?? ''
+  const [papers, setPapers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const filteredPapers = useMemo(
-    () =>
-      papers.filter((paper) => {
-        const matchesKeyword =
-          !keyword ||
-          paper.title.toLowerCase().includes(keyword) ||
-          paper.abstract.toLowerCase().includes(keyword)
-        const matchesAuthor =
-          !author || paper.authors.some((name) => name.toLowerCase().includes(author))
-        const matchesJournal = !journal || paper.journal.toLowerCase().includes(journal)
+  useEffect(() => {
+    async function fetchResults() {
+      setLoading(true)
+      setError('')
+      try {
+        const keyword = searchParams.get('keyword') ?? ''
+        const author = searchParams.get('author') ?? ''
+        const journal = searchParams.get('journal') ?? ''
+        const params = {}
+        if (keyword) params.keyword = keyword
+        if (author) params.author = author
+        if (journal) params.journal = journal
 
-        return matchesKeyword && matchesAuthor && matchesJournal
-      }),
-    [author, journal, keyword],
-  )
+        const result = await searchPapers(params)
+        setPapers(result.items ?? result ?? [])
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to load search results')
+        setPapers([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchResults()
+  }, [searchParams])
+
+  if (loading) {
+    return (
+      <section className={styles.resultsPage}>
+        <p>Loading...</p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section className={styles.resultsPage}>
+        <p>{error}</p>
+      </section>
+    )
+  }
 
   return (
     <section className={styles.resultsPage}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Search Results</h1>
         <p className={styles.summary}>
-          Found <span className={styles.summaryCount}>{filteredPapers.length}</span> matching paper(s).
+          Found <span className={styles.summaryCount}>{papers.length}</span> matching paper(s).
         </p>
       </div>
-      <SearchResultsList papers={filteredPapers} />
+      <SearchResultsList papers={papers} />
     </section>
   )
 }
