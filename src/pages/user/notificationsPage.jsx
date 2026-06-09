@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getNotifications, markAsRead, markAllAsRead } from '../../services/notificationService'
+import Skeleton from '../../components/Skeleton'
 import styles from './simpleListPage.module.css'
 
 function NotificationsPage() {
@@ -45,7 +46,8 @@ function NotificationsPage() {
   if (loading) {
     return (
       <section className={styles.panel}>
-        <p>Loading...</p>
+        <Skeleton variant="title" width="30%" />
+        <Skeleton variant="card" count={3} />
       </section>
     )
   }

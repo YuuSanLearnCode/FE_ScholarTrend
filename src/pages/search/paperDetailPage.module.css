@@ -93,6 +93,17 @@
   font-size: 1.0625rem;
 }
 
+.authorLink {
+  color: var(--color-brand);
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.authorLink:hover {
+  color: var(--color-brand-light);
+  text-decoration: underline;
+}
+
 .button {
   display: inline-flex;
   align-items: center;

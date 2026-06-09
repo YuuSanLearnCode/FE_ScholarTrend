@@ -12,16 +12,21 @@ import DashboardPage from "./pages/dashboardPage";
 import SearchPage from "./pages/search/searchPage";
 import SearchResultsPage from "./pages/search/searchResultsPage";
 import PaperDetailPage from "./pages/search/paperDetailPage";
+import AuthorDetailPage from "./pages/search/authorDetailPage";
 import TrendChartPage from "./pages/trends/trendChartPage";
 import BookmarksPage from "./pages/user/bookmarksPage";
 import FollowingPage from "./pages/user/followingPage";
 import NotificationsPage from "./pages/user/notificationsPage";
+import ProfilePage from "./pages/user/profilePage";
 
 // Admin Pages
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboardPage from "./pages/admin/adminDashboardPage";
 import AdminUserManagementPage from "./pages/admin/adminUserManagementPage";
 import AdminApiConfigPage from "./pages/admin/adminApiConfigPage";
+
+// Error Pages
+import NotFoundPage from "./pages/notFoundPage";
 
 /**
  * ProtectedRoute — chặn truy cập nếu chưa login hoặc không đúng role
@@ -82,6 +87,7 @@ function App() {
           ],
         },
         { path: "papers/:paperId", element: <PaperDetailPage /> },
+        { path: "authors/:authorName", element: <AuthorDetailPage /> },
         { path: "trends", element: <TrendChartPage /> },
 
         // Cần đăng nhập — tất cả roles
@@ -98,6 +104,16 @@ function App() {
           element: (
             <RequireAuth>
               <BookmarksPage />
+            </RequireAuth>
+          ),
+        },
+
+        // Cần đăng nhập — tất cả roles
+        {
+          path: "profile",
+          element: (
+            <RequireAuth>
+              <ProfilePage />
             </RequireAuth>
           ),
         },
@@ -119,6 +135,9 @@ function App() {
             </ProtectedRoute>
           ),
         },
+
+        // 404 catch-all
+        { path: "*", element: <NotFoundPage /> },
       ],
     },
   ]);

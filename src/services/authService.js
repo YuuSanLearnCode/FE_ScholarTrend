@@ -42,6 +42,23 @@ export async function getMe() {
 }
 
 /**
+ * Cập nhật thông tin profile
+ */
+export async function updateProfile(data) {
+  const res = await api.put('/auth/profile', data)
+  if (res.data.fullName) localStorage.setItem('userName', res.data.fullName)
+  return res.data
+}
+
+/**
+ * Đổi mật khẩu
+ */
+export async function changePassword(data) {
+  const res = await api.put('/auth/change-password', data)
+  return res.data
+}
+
+/**
  * Logout → xóa localStorage
  */
 export function logout() {

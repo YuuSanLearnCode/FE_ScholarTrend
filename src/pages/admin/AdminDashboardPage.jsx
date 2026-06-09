@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import StatsCard from '../../components/StatsCard'
+import Skeleton from '../../components/Skeleton'
 import { getAdminStats } from '../../services/adminService'
 import styles from './adminDashboardPage.module.css'
 
@@ -13,7 +14,6 @@ function AdminDashboardPage() {
     async function fetchStats() {
       try {
         const result = await getAdminStats()
-        // Convert stats object into array for StatsCard
         if (result) {
           const { lastSync, systemHealth, ...stats } = result
           const statsArr = Object.entries(stats).map(([key, value]) => ({
@@ -36,7 +36,10 @@ function AdminDashboardPage() {
   if (loading) {
     return (
       <section className={styles.dashboardPage}>
-        <p>Loading...</p>
+        <Skeleton variant="title" width="40%" />
+        <div className={styles.statsGrid}>
+          <Skeleton variant="card" count={4} />
+        </div>
       </section>
     )
   }

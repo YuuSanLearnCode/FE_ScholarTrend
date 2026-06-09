@@ -56,7 +56,8 @@ function AdminUserManagementPage() {
   if (loading) {
     return (
       <section className={styles.userMgmtPage}>
-        <p>Loading...</p>
+        <Skeleton variant="title" width="40%" />
+        <Skeleton variant="card" count={3} />
       </section>
     )
   }

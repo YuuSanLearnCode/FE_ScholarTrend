@@ -1,0 +1,23 @@
+/* ─── Author Detail Page · Clean Light Theme ─── */
+
+.page {
+  animation: fadeIn 0.3s ease;
+}
+
+.header {
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}

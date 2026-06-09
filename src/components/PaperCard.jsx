@@ -12,9 +12,9 @@ function PaperCard({ paper }) {
       </div>
       <div className={styles.authors}>
         {paper.authors.map((author) => (
-          <span key={author} className={styles.authorPill}>
+          <Link key={author} to={`/authors/${encodeURIComponent(author)}`} className={styles.authorPill}>
             {author}
-          </span>
+          </Link>
         ))}
       </div>
       <p className={styles.journal}>{paper.journal}</p>

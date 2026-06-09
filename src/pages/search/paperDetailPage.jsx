@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { getPaperById } from '../../services/paperService'
+import { Link, useParams } from 'react-router-dom'
+import { getPaperById, recordView } from '../../services/paperService'
 import { addBookmark, removeBookmark } from '../../services/bookmarkService'
+import Skeleton from '../../components/Skeleton'
 import styles from './paperDetailPage.module.css'
 
 function PaperDetailPage() {
@@ -15,7 +16,10 @@ function PaperDetailPage() {
   useEffect(() => {
     async function fetchPaper() {
       try {
-        const result = await getPaperById(paperId)
+        const [result] = await Promise.all([
+          getPaperById(paperId),
+          recordView(paperId).catch(() => {}),
+        ])
         setPaper(result)
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load paper details')
@@ -44,7 +48,12 @@ function PaperDetailPage() {
   }
 
   if (loading) {
-    return <p className={styles.notFound}>Loading...</p>
+    return (
+      <div className={styles.detailPage}>
+        <Skeleton variant="title" />
+        <Skeleton variant="card" />
+      </div>
+    )
   }
 
   if (error) {
@@ -63,7 +72,14 @@ function PaperDetailPage() {
         <div className={styles.metaGrid}>
           <div className={styles.metaCard}>
             <div className={styles.metaLabel}>Authors</div>
-            <div className={styles.metaValue}>{(paper.authors ?? []).join(', ')}</div>
+            <div className={styles.metaValue}>
+              {(paper.authors ?? []).map((author, i) => (
+                <span key={author}>
+                  {i > 0 && ', '}
+                  <Link to={`/authors/${encodeURIComponent(author)}`} className={styles.authorLink}>{author}</Link>
+                </span>
+              ))}
+            </div>
           </div>
           <div className={styles.metaCard}>
             <div className={styles.metaLabel}>Year</div>
@@ -73,6 +89,12 @@ function PaperDetailPage() {
             <div className={styles.metaLabel}>Journal</div>
             <div className={styles.metaValue}>{paper.journal}</div>
           </div>
+          {paper.viewCount !== undefined && (
+            <div className={styles.metaCard}>
+              <div className={styles.metaLabel}>Views</div>
+              <div className={styles.metaValue}>{paper.viewCount.toLocaleString()}</div>
+            </div>
+          )}
         </div>
 
         <div className={styles.abstractSection}>

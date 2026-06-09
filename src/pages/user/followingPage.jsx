@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getFollowedTopics, getFollowedJournals, unfollowTopic, unfollowJournal } from '../../services/followService'
+import Skeleton from '../../components/Skeleton'
 import styles from './simpleListPage.module.css'
 
 function FollowingPage() {
@@ -49,7 +50,8 @@ function FollowingPage() {
   if (loading) {
     return (
       <section className={styles.panel}>
-        <p>Loading...</p>
+        <Skeleton variant="title" width="30%" />
+        <Skeleton variant="card" count={3} />
       </section>
     )
   }

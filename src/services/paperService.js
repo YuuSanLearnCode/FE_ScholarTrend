@@ -29,3 +29,19 @@ export async function getRecentPapers(count = 10) {
   const { data } = await api.get('/papers/recent', { params: { count } })
   return data
 }
+
+/**
+ * Lấy papers theo tác giả
+ */
+export async function getPapersByAuthor(authorName, params = {}) {
+  const { data } = await api.get('/papers', { params: { ...params, author: authorName } })
+  return data
+}
+
+/**
+ * Ghi nhận lượt xem paper
+ */
+export async function recordView(paperId) {
+  const { data } = await api.post(`/papers/${paperId}/view`)
+  return data
+}
