@@ -98,6 +98,15 @@ export async function getTopJournalTrends(filters = {}) {
   return Array.isArray(result) ? result : []
 }
 
+export async function getPublicationTrends(filters = {}) {
+  const { data: response } = await api.get('/trends/publications', {
+    params: getTrendParams(filters),
+  })
+
+  const result = unwrapResponse(response, 'Failed to load publication trends.')
+  return Array.isArray(result) ? result : []
+}
+
 export async function getTrendOverview() {
   const { data } = await api.get('/trends/overview')
   return data

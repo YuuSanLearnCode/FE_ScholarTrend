@@ -17,6 +17,7 @@ import {
 import {
   getJournalTrends,
   getKeywordTrends,
+  getPublicationTrends,
   getTopJournalTrends,
   getTopKeywordTrends,
   getTopTopicTrends,
@@ -116,6 +117,7 @@ function TrendChartPage() {
           topTopicResult,
           journalResult,
           topJournalResult,
+          publicationResult,
         ] = await Promise.all([
           getTrendDashboard(initialFilters),
           getKeywordTrends(initialFilters),
@@ -124,12 +126,14 @@ function TrendChartPage() {
           getTopTopicTrends(initialFilters),
           getJournalTrends(initialFilters),
           getTopJournalTrends(initialFilters),
+          getPublicationTrends(initialFilters),
         ])
         setDashboard({
           ...dashboardResult,
           topKeywords: topKeywordResult,
           topTopics: topTopicResult,
           topJournals: topJournalResult,
+          publicationTrend: publicationResult,
         })
         setKeywordSeries(keywordResult)
         setTopicSeries(topicResult)
@@ -165,6 +169,7 @@ function TrendChartPage() {
         topTopicResult,
         journalResult,
         topJournalResult,
+        publicationResult,
       ] = await Promise.all([
         getTrendDashboard(nextFilters),
         getKeywordTrends(nextFilters),
@@ -173,12 +178,14 @@ function TrendChartPage() {
         getTopTopicTrends(nextFilters),
         getJournalTrends(nextFilters),
         getTopJournalTrends(nextFilters),
+        getPublicationTrends(nextFilters),
       ])
       setDashboard({
         ...dashboardResult,
         topKeywords: topKeywordResult,
         topTopics: topTopicResult,
         topJournals: topJournalResult,
+        publicationTrend: publicationResult,
       })
       setKeywordSeries(keywordResult)
       setTopicSeries(topicResult)
