@@ -40,16 +40,40 @@ export async function getKeywordTrends(filters = {}) {
   })
   const result = unwrapResponse(response, 'Failed to load keyword trends.')
 
-  return result.map((series) => ({
+  return (Array.isArray(result) ? result : []).map((series) => ({
     ...series,
     dataPoints: series.dataPoints ?? [],
   }))
 }
 
-/** Top trending topics */
-export async function getTopicTrends(top = 10) {
-  const { data } = await api.get('/trends/topics', { params: { top } })
-  return data
+export async function getTopKeywordTrends(filters = {}) {
+  const { data: response } = await api.get('/trends/keywords/top', {
+    params: getTrendParams(filters),
+  })
+
+  const result = unwrapResponse(response, 'Failed to load top keywords.')
+  return Array.isArray(result) ? result : []
+}
+
+export async function getTopicTrends(filters = {}) {
+  const { data: response } = await api.get('/trends/topics', {
+    params: getTrendParams(filters),
+  })
+  const result = unwrapResponse(response, 'Failed to load topic trends.')
+
+  return (Array.isArray(result) ? result : []).map((series) => ({
+    ...series,
+    dataPoints: series.dataPoints ?? [],
+  }))
+}
+
+export async function getTopTopicTrends(filters = {}) {
+  const { data: response } = await api.get('/trends/topics/top', {
+    params: getTrendParams(filters),
+  })
+
+  const result = unwrapResponse(response, 'Failed to load top topics.')
+  return Array.isArray(result) ? result : []
 }
 
 /** Tổng quan: total papers, journals, users... */
