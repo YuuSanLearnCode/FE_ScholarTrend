@@ -86,7 +86,7 @@ function FollowingPage() {
             <li key={id} className={styles.listItem}>
               <Link
                 className={styles.listItemText}
-                to={`/search/results?journalId=${encodeURIComponent(id)}&journalName=${encodeURIComponent(name)}&page=1&pageSize=10`}
+                to={`/journals/${encodeURIComponent(id)}`}
               >
                 {name}
               </Link>

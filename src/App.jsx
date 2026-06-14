@@ -13,6 +13,7 @@ import SearchPage from "./pages/search/searchPage";
 import SearchResultsPage from "./pages/search/searchResultsPage";
 import PaperDetailPage from "./pages/search/paperDetailPage";
 import AuthorDetailPage from "./pages/search/authorDetailPage";
+import JournalDetailPage from "./pages/journals/journalDetailPage";
 import TopicDetailPage from "./pages/topics/topicDetailPage";
 import TrendChartPage from "./pages/trends/trendChartPage";
 import BookmarksPage from "./pages/user/bookmarksPage";
@@ -94,6 +95,7 @@ function App() {
         },
         { path: "papers/:paperId", element: <PaperDetailPage /> },
         { path: "authors/:authorName", element: <AuthorDetailPage /> },
+        { path: "journals/:journalId", element: <JournalDetailPage /> },
         { path: "topics/:topicId", element: <TopicDetailPage /> },
         { path: "trends", element: <TrendChartPage /> },
 

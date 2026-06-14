@@ -23,7 +23,7 @@ function PaperCard({ paper }) {
         {paper.journalId ? (
           <Link
             className={styles.journal}
-            to={`/search/results?journalId=${paper.journalId}&journalName=${encodeURIComponent(paper.journal)}&page=1&pageSize=10`}
+            to={`/journals/${paper.journalId}`}
           >
             {paper.journal}
           </Link>

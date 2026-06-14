@@ -107,7 +107,7 @@ function PaperDetailPage() {
           <div className={styles.journalLine}>
             {paper.journal?.id ? (
               <Link
-                to={`/search/results?journalId=${paper.journal.id}&journalName=${encodeURIComponent(paper.journalName)}&page=1&pageSize=10`}
+                to={`/journals/${paper.journal.id}`}
               >
                 {paper.journalName}
               </Link>

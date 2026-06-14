@@ -25,6 +25,7 @@ import {
   getTopicTrends,
   getTrendDashboard,
 } from '../../services/trendService'
+import { getJournals } from '../../services/journalService'
 import { getTopics } from '../../services/topicService'
 import Skeleton from '../../components/Skeleton'
 import styles from './trendChartPage.module.css'
@@ -96,7 +97,7 @@ function getCompareLink(type, series) {
   if (type === 'topic') {
     return `/topics/${series.id}`
   }
-  return `/search/results?journalId=${series.id}&journalName=${encodeURIComponent(series.name)}&page=1&pageSize=10`
+  return `/journals/${series.id}`
 }
 
 function TrendChartPage() {
@@ -137,6 +138,7 @@ function TrendChartPage() {
           topJournalResult,
           publicationResult,
           allTopicsResult,
+          allJournalsResult,
         ] = await Promise.all([
           getTrendDashboard(initialFilters),
           getKeywordTrends(initialFilters),
@@ -147,6 +149,7 @@ function TrendChartPage() {
           getTopJournalTrends(initialFilters),
           getPublicationTrends(initialFilters),
           getTopics(),
+          getJournals(),
         ])
         setDashboard({
           ...dashboardResult,
@@ -161,7 +164,7 @@ function TrendChartPage() {
         setOptions({
           keywords: topKeywordResult,
           topics: allTopicsResult,
-          journals: topJournalResult,
+          journals: allJournalsResult,
         })
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load trend data')
@@ -843,7 +846,7 @@ function TrendChartPage() {
             {journalSeries.map((series, index) => (
               <Link
                 key={series.id}
-                to={`/search/results?journalId=${series.id}&journalName=${encodeURIComponent(series.name)}&page=1&pageSize=10`}
+                to={`/journals/${series.id}`}
                 className={styles.seriesLegendItem}
               >
                 <span style={{ background: COLORS[index % COLORS.length] }} />
@@ -957,7 +960,7 @@ function TrendChartPage() {
             dashboard.topJournals.map((item, index) => (
               <Link
                 key={item.id}
-                to={`/search/results?journalId=${item.id}&journalName=${encodeURIComponent(item.name)}&page=1&pageSize=10`}
+                to={`/journals/${item.id}`}
                 className={styles.journalCard}
               >
                 <span className={styles.journalRank}>#{index + 1}</span>
