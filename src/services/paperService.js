@@ -8,7 +8,7 @@ function unwrapResponse(response, fallbackMessage) {
   return response.data
 }
 
-function normalizePaper(paper) {
+function normalizePaperListItem(paper) {
   return {
     ...paper,
     year: paper.publicationYear ?? paper.year,
@@ -20,6 +20,30 @@ function normalizePaper(paper) {
       .filter(Boolean),
     keywords: paper.keywords ?? [],
     citationCount: paper.citationCount ?? 0,
+  }
+}
+
+function normalizePaperDetail(paper) {
+  const journal = typeof paper.journal === 'string'
+    ? { name: paper.journal }
+    : paper.journal
+
+  return {
+    ...paper,
+    year: paper.publicationYear ?? paper.year,
+    journal: journal ?? null,
+    journalName: journal?.name || 'Unknown journal',
+    authors: (paper.authors ?? [])
+      .map((author) => (
+        typeof author === 'string'
+          ? { id: null, name: author, affiliation: '' }
+          : author
+      ))
+      .filter((author) => author.name),
+    keywords: paper.keywords ?? [],
+    topics: paper.topics ?? [],
+    citationCount: paper.citationCount ?? 0,
+    isBookmarked: Boolean(paper.isBookmarked),
   }
 }
 
@@ -51,7 +75,7 @@ export async function searchPapers(params = {}) {
 
   return {
     ...result,
-    items: (result.items ?? []).map(normalizePaper),
+    items: (result.items ?? []).map(normalizePaperListItem),
     totalCount: result.totalCount ?? 0,
     page: Number(result.page) > 0 ? result.page : apiParams.Page,
     pageSize: Number(result.pageSize) > 0 ? result.pageSize : apiParams.PageSize,
@@ -66,7 +90,7 @@ export async function searchPapers(params = {}) {
  */
 export async function getPaperById(id) {
   const { data: response } = await api.get(`/papers/${id}`)
-  return normalizePaper(unwrapResponse(response, 'Failed to load paper details.'))
+  return normalizePaperDetail(unwrapResponse(response, 'Failed to load paper details.'))
 }
 
 /**
