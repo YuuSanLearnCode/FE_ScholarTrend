@@ -62,11 +62,23 @@ export async function getFollowedJournals() {
 
 /** Follow 1 journal */
 export async function followJournal(journalId) {
-  const { data } = await api.post('/following/journals', { journalId })
-  return data
+  const normalizedJournalId = Number(journalId)
+  if (!Number.isInteger(normalizedJournalId) || normalizedJournalId <= 0) {
+    throw new Error('Invalid journal id.')
+  }
+
+  const { data: response } = await api.post(`/follows/journals/${normalizedJournalId}`)
+  const result = unwrapResponse(response, 'Failed to follow journal.')
+  return normalizeFollow(result, 'Journal')
 }
 
 /** Unfollow 1 journal */
 export async function unfollowJournal(journalId) {
-  await api.delete(`/following/journals/${journalId}`)
+  const normalizedJournalId = Number(journalId)
+  if (!Number.isInteger(normalizedJournalId) || normalizedJournalId <= 0) {
+    throw new Error('Invalid journal id.')
+  }
+
+  const { data: response } = await api.delete(`/follows/journals/${normalizedJournalId}`)
+  return unwrapResponse(response, 'Failed to unfollow journal.')
 }

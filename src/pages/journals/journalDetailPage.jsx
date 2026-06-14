@@ -11,6 +11,11 @@ import {
 } from 'recharts'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
+import {
+  followJournal,
+  getFollowedJournals,
+  unfollowJournal,
+} from '../../services/followService'
 import { getJournalById } from '../../services/journalService'
 import styles from './journalDetailPage.module.css'
 
@@ -28,13 +33,35 @@ function JournalDetailPage() {
   const [journal, setJournal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+  const [followError, setFollowError] = useState('')
 
   useEffect(() => {
     async function fetchJournal() {
       setLoading(true)
       setError('')
+      setFollowError('')
+      setIsFollowing(false)
       try {
-        setJournal(await getJournalById(journalId))
+        const hasToken = Boolean(localStorage.getItem('token'))
+        const journalResult = await getJournalById(journalId)
+        setJournal(journalResult)
+
+        if (hasToken) {
+          try {
+            const followedJournals = await getFollowedJournals()
+            setIsFollowing(
+              followedJournals.some((item) => Number(item.id) === Number(journalId)),
+            )
+          } catch (followErr) {
+            setFollowError(
+              followErr.response?.data?.message ||
+                followErr.message ||
+                'Could not load follow status.',
+            )
+          }
+        }
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load journal details.')
         setJournal(null)
@@ -45,6 +72,28 @@ function JournalDetailPage() {
 
     fetchJournal()
   }, [journalId])
+
+  const handleFollowToggle = async () => {
+    setFollowLoading(true)
+    setFollowError('')
+    try {
+      if (isFollowing) {
+        await unfollowJournal(journalId)
+        setIsFollowing(false)
+      } else {
+        await followJournal(journalId)
+        setIsFollowing(true)
+      }
+    } catch (err) {
+      setFollowError(
+        err.response?.data?.message ||
+          err.message ||
+          `Failed to ${isFollowing ? 'unfollow' : 'follow'} journal.`,
+      )
+    } finally {
+      setFollowLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -89,13 +138,31 @@ function JournalDetailPage() {
             )}
           </div>
         </div>
-        <Link
-          className={styles.primaryLink}
-          to={`/search/results?journalId=${journal.id}&journalName=${encodeURIComponent(journal.name)}&page=1&pageSize=10`}
-        >
-          View all papers
-        </Link>
+        <div className={styles.heroActions}>
+          {localStorage.getItem('token') ? (
+            <button
+              type="button"
+              className={`${styles.followButton} ${isFollowing ? styles.followingButton : ''}`}
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+            >
+              {followLoading
+                ? isFollowing ? 'Unfollowing...' : 'Following...'
+                : isFollowing ? 'Unfollow journal' : 'Follow journal'}
+            </button>
+          ) : (
+            <Link className={styles.followButton} to="/login">Sign in to follow</Link>
+          )}
+          <Link
+            className={styles.primaryLink}
+            to={`/search/results?journalId=${journal.id}&journalName=${encodeURIComponent(journal.name)}&page=1&pageSize=10`}
+          >
+            View all papers
+          </Link>
+        </div>
       </header>
+
+      {followError && <p className={styles.followError}>{followError}</p>}
 
       <div className={styles.statsGrid}>
         <article>
