@@ -24,6 +24,7 @@ function NotificationsPage() {
   const [limit, setLimit] = useState('20')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [markingId, setMarkingId] = useState(null)
 
   useEffect(() => {
     async function fetchNotifications() {
@@ -47,6 +48,10 @@ function NotificationsPage() {
   }, [filter, limit])
 
   const handleMarkAsRead = async (notificationId) => {
+    if (markingId === notificationId) return
+
+    setMarkingId(notificationId)
+    setError('')
     try {
       await markAsRead(notificationId)
       setNotifications((current) =>
@@ -61,6 +66,8 @@ function NotificationsPage() {
       window.dispatchEvent(new Event('notifications-updated'))
     } catch {
       setError('Failed to mark notification as read.')
+    } finally {
+      setMarkingId(null)
     }
   }
 
@@ -138,8 +145,9 @@ function NotificationsPage() {
             return (
               <li
                 key={item.id}
-                className={`${styles.listItem} ${isRead ? styles.listItemRead : ''}`}
+                className={`${styles.listItem} ${isRead ? styles.listItemRead : ''} ${markingId === item.id ? styles.listItemPending : ''}`}
                 onClick={() => !isRead && handleMarkAsRead(item.id)}
+                aria-busy={markingId === item.id}
               >
                 <div className={styles.notificationContent}>
                   <div className={styles.notificationTitle}>

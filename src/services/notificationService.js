@@ -41,7 +41,13 @@ export async function getUnreadNotificationCount() {
 }
 
 export async function markAsRead(notificationId) {
-  await api.patch(`/notifications/${notificationId}/read`)
+  const normalizedId = Number(notificationId)
+  if (!Number.isInteger(normalizedId) || normalizedId <= 0) {
+    throw new Error('Invalid notification id.')
+  }
+
+  const { data: response } = await api.patch(`/notifications/${normalizedId}/read`)
+  return unwrapResponse(response, 'Failed to mark notification as read.')
 }
 
 /** Đánh dấu tất cả đã đọc */

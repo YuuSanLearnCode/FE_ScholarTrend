@@ -75,6 +75,11 @@
   cursor: default;
 }
 
+.listItemPending {
+  pointer-events: none;
+  opacity: 0.55;
+}
+
 .listItemIcon {
   font-size: 1.1rem;
   flex-shrink: 0;
