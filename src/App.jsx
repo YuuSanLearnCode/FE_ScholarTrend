@@ -20,6 +20,7 @@ import BookmarksPage from "./pages/user/bookmarksPage";
 import FollowingPage from "./pages/user/followingPage";
 import NotificationsPage from "./pages/user/notificationsPage";
 import ProfilePage from "./pages/user/profilePage";
+import PublicationReportPage from "./pages/reports/publicationReportPage";
 
 // Admin Pages
 import AdminLayout from "./components/admin/AdminLayout";
@@ -98,6 +99,7 @@ function App() {
         { path: "journals/:journalId", element: <JournalDetailPage /> },
         { path: "topics/:topicId", element: <TopicDetailPage /> },
         { path: "trends", element: <TrendChartPage /> },
+        { path: "reports/publications", element: <PublicationReportPage /> },
 
         // Cần đăng nhập — tất cả roles
         {

@@ -36,6 +36,7 @@ export function getNavItems(role) {
     { to: '/', label: 'Home' },
     { to: '/search', label: 'Search' },
     { to: '/trends', label: 'Trends' },
+    { to: '/reports/publications', label: 'Reports' },
   ]
 
   if (!role) return common
