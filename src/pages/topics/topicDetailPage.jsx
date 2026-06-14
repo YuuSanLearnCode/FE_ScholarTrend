@@ -11,6 +11,11 @@ import {
 } from 'recharts'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
+import {
+  followTopic,
+  getFollowedTopics,
+  unfollowTopic,
+} from '../../services/followService'
 import { getTopicById } from '../../services/topicService'
 import styles from './topicDetailPage.module.css'
 
@@ -28,13 +33,35 @@ function TopicDetailPage() {
   const [topic, setTopic] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isFollowing, setIsFollowing] = useState(false)
+  const [followLoading, setFollowLoading] = useState(false)
+  const [followError, setFollowError] = useState('')
 
   useEffect(() => {
     async function fetchTopic() {
       setLoading(true)
       setError('')
+      setFollowError('')
+      setIsFollowing(false)
       try {
-        setTopic(await getTopicById(topicId))
+        const hasToken = Boolean(localStorage.getItem('token'))
+        const topicResult = await getTopicById(topicId)
+        setTopic(topicResult)
+
+        if (hasToken) {
+          try {
+            const followedTopics = await getFollowedTopics()
+            setIsFollowing(
+              followedTopics.some((item) => Number(item.id) === Number(topicId)),
+            )
+          } catch (followErr) {
+            setFollowError(
+              followErr.response?.data?.message ||
+                followErr.message ||
+                'Could not load follow status.',
+            )
+          }
+        }
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load topic details.')
         setTopic(null)
@@ -45,6 +72,28 @@ function TopicDetailPage() {
 
     fetchTopic()
   }, [topicId])
+
+  const handleFollowToggle = async () => {
+    setFollowLoading(true)
+    setFollowError('')
+    try {
+      if (isFollowing) {
+        await unfollowTopic(topicId)
+        setIsFollowing(false)
+      } else {
+        await followTopic(topicId)
+        setIsFollowing(true)
+      }
+    } catch (err) {
+      setFollowError(
+        err.response?.data?.message ||
+          err.message ||
+          `Failed to ${isFollowing ? 'unfollow' : 'follow'} topic.`,
+      )
+    } finally {
+      setFollowLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -89,13 +138,31 @@ function TopicDetailPage() {
           <h1>{topic.name}</h1>
           <p>{topic.description || 'No description is available for this topic.'}</p>
         </div>
-        <Link
-          className={styles.primaryLink}
-          to={`/search/results?topicId=${topic.id}&topicName=${encodeURIComponent(topic.name)}&page=1&pageSize=10`}
-        >
-          View all papers
-        </Link>
+        <div className={styles.heroActions}>
+          {localStorage.getItem('token') ? (
+            <button
+              type="button"
+              className={`${styles.followButton} ${isFollowing ? styles.followingButton : ''}`}
+              onClick={handleFollowToggle}
+              disabled={followLoading}
+            >
+              {followLoading
+                ? isFollowing ? 'Unfollowing...' : 'Following...'
+                : isFollowing ? 'Unfollow topic' : 'Follow topic'}
+            </button>
+          ) : (
+            <Link className={styles.followButton} to="/login">Sign in to follow</Link>
+          )}
+          <Link
+            className={styles.primaryLink}
+            to={`/search/results?topicId=${topic.id}&topicName=${encodeURIComponent(topic.name)}&page=1&pageSize=10`}
+          >
+            View all papers
+          </Link>
+        </div>
       </header>
+
+      {followError && <p className={styles.followError}>{followError}</p>}
 
       <div className={styles.statsGrid}>
         <article>

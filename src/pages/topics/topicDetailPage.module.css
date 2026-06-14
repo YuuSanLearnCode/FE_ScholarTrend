@@ -43,7 +43,6 @@
 }
 
 .primaryLink {
-  flex-shrink: 0;
   padding: 0.68rem 0.9rem;
   border-radius: 9px;
   background: var(--color-brand);
@@ -51,6 +50,42 @@
   font-size: 0.75rem;
   font-weight: 750;
   box-shadow: 0 6px 16px rgba(30, 64, 175, 0.18);
+}
+
+.heroActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.6rem;
+}
+
+.followButton {
+  padding: 0.68rem 0.9rem;
+  border: 1px solid var(--color-brand-border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--color-brand);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 750;
+  text-align: center;
+  cursor: pointer;
+}
+
+.followingButton {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.followButton:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.followError {
+  margin: -0.65rem 0 1rem;
+  color: var(--color-danger);
+  font-size: 0.75rem;
 }
 
 .statsGrid {
@@ -162,9 +197,15 @@
     flex-direction: column;
   }
 
-  .primaryLink {
+  .primaryLink,
+  .followButton {
     width: 100%;
     text-align: center;
+  }
+
+  .heroActions {
+    width: 100%;
+    flex-direction: column;
   }
 
   .statsGrid {

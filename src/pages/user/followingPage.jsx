@@ -80,13 +80,13 @@ function FollowingPage() {
           </li>
         )}
         {topics.map((item) => {
-          const id = item.id ?? item
+          const id = item.targetId ?? item.id ?? item
           const name = item.name ?? item.topic ?? String(item)
           return (
             <li key={id} className={styles.listItem}>
               <Link
                 className={styles.listItemText}
-                to={`/journals/${encodeURIComponent(id)}`}
+                to={`/topics/${encodeURIComponent(id)}`}
               >
                 {name}
               </Link>
@@ -111,7 +111,12 @@ function FollowingPage() {
           const name = item.name ?? item.journal ?? String(item)
           return (
             <li key={id} className={styles.listItem}>
-              <span className={styles.listItemText}>{name}</span>
+              <Link
+                className={styles.listItemText}
+                to={`/journals/${encodeURIComponent(id)}`}
+              >
+                {name}
+              </Link>
               <button type="button" className={styles.unfollowBtn} onClick={() => handleUnfollowJournal(id)}>
                 Unfollow
               </button>
