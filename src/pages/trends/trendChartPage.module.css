@@ -278,6 +278,85 @@
   box-shadow: var(--shadow-sm);
 }
 
+.compareForm {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(0, 3fr) auto;
+  align-items: end;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  background: #fbfcfe;
+}
+
+.compareType,
+.comparePicker {
+  min-width: 0;
+}
+
+.compareChoices {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.45rem;
+  padding-bottom: 0.15rem;
+}
+
+.compareChoice {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 190px;
+  padding: 0.52rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--color-text-secondary);
+  font-size: 0.68rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.compareChoice:hover {
+  border-color: var(--color-brand-border);
+}
+
+.compareChoice input {
+  accent-color: var(--color-brand);
+}
+
+.compareChoice span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compareChoiceActive {
+  border-color: var(--color-brand-light);
+  background: var(--color-brand-bg);
+  color: var(--color-brand);
+}
+
+.compareSubmit {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.compareSubmit > span {
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.compareError {
+  margin: -0.35rem 0 0.8rem;
+  color: var(--color-danger);
+  font-size: 0.72rem;
+}
+
 .chartWrap,
 .chartWrapSmall {
   width: 100%;
@@ -462,6 +541,15 @@
   .chartsRow {
     grid-template-columns: 1fr;
   }
+
+  .compareForm {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .compareSubmit {
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 560px) {
@@ -481,6 +569,11 @@
 
   .button {
     width: 100%;
+  }
+
+  .compareSubmit {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .statsGrid {

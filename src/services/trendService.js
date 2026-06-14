@@ -21,6 +21,19 @@ function getTrendParams(filters = {}) {
   }
 }
 
+function getCompareFilter(filters = {}) {
+  return {
+    yearFrom: Number(filters.yearFrom) || 0,
+    yearTo: Number(filters.yearTo) || 0,
+    monthFrom: Number(filters.monthFrom) || 0,
+    monthTo: Number(filters.monthTo) || 0,
+    keywordId: Number(filters.keywordId) || 0,
+    topicId: Number(filters.topicId) || 0,
+    journalId: Number(filters.journalId) || 0,
+    top: Number(filters.top) || 10,
+  }
+}
+
 export async function getTrendDashboard(filters = {}) {
   const params = getTrendParams(filters)
   const { data: response } = await api.get('/trends/dashboard', { params })
@@ -105,6 +118,20 @@ export async function getPublicationTrends(filters = {}) {
 
   const result = unwrapResponse(response, 'Failed to load publication trends.')
   return Array.isArray(result) ? result : []
+}
+
+export async function compareTrends(type, ids, filters = {}) {
+  const { data: response } = await api.post('/trends/compare', {
+    type,
+    ids: ids.map(Number),
+    filter: getCompareFilter(filters),
+  })
+  const result = unwrapResponse(response, 'Failed to compare trends.')
+
+  return (Array.isArray(result) ? result : []).map((series) => ({
+    ...series,
+    dataPoints: series.dataPoints ?? [],
+  }))
 }
 
 export async function getTrendOverview() {

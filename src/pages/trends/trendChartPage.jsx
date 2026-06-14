@@ -15,6 +15,7 @@ import {
   YAxis,
 } from 'recharts'
 import {
+  compareTrends,
   getJournalTrends,
   getKeywordTrends,
   getPublicationTrends,
@@ -87,6 +88,16 @@ function buildSeriesChartData(series, metric, keyPrefix) {
   return Array.from(periods.values()).sort((a, b) => a.sortKey.localeCompare(b.sortKey))
 }
 
+function getCompareLink(type, series) {
+  if (type === 'keyword') {
+    return `/search/results?keyword=${encodeURIComponent(series.name)}&searchType=Keyword&page=1&pageSize=10`
+  }
+  if (type === 'topic') {
+    return `/search/results?topicId=${series.id}&topicName=${encodeURIComponent(series.name)}&page=1&pageSize=10`
+  }
+  return `/search/results?journalId=${series.id}&journalName=${encodeURIComponent(series.name)}&page=1&pageSize=10`
+}
+
 function TrendChartPage() {
   const [chartType, setChartType] = useState('line')
   const [keywordMetric, setKeywordMetric] = useState('paperCount')
@@ -96,6 +107,12 @@ function TrendChartPage() {
   const [keywordSeries, setKeywordSeries] = useState([])
   const [topicSeries, setTopicSeries] = useState([])
   const [journalSeries, setJournalSeries] = useState([])
+  const [compareType, setCompareType] = useState('keyword')
+  const [compareIds, setCompareIds] = useState([])
+  const [compareMetric, setCompareMetric] = useState('paperCount')
+  const [compareSeries, setCompareSeries] = useState([])
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [compareError, setCompareError] = useState('')
   const [options, setOptions] = useState({
     keywords: [],
     topics: [],
@@ -157,9 +174,50 @@ function TrendChartPage() {
     setFilters((current) => ({ ...current, [field]: event.target.value }))
   }
 
+  const handleCompareTypeChange = (event) => {
+    setCompareType(event.target.value)
+    setCompareIds([])
+    setCompareSeries([])
+    setCompareError('')
+  }
+
+  const handleCompareIdChange = (id) => {
+    setCompareError('')
+    if (!compareIds.includes(id) && compareIds.length >= COLORS.length) {
+      setCompareError(`You can compare up to ${COLORS.length} items at once.`)
+      return
+    }
+
+    setCompareIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((item) => item !== id)
+      }
+      return [...current, id]
+    })
+  }
+
+  const handleCompare = async (event) => {
+    event.preventDefault()
+    if (compareIds.length < 2) {
+      setCompareError('Select at least two items to compare.')
+      return
+    }
+
+    setCompareLoading(true)
+    setCompareError('')
+    try {
+      setCompareSeries(await compareTrends(compareType, compareIds, filters))
+    } catch (err) {
+      setCompareError(err.response?.data?.message || err.message || 'Failed to compare trends')
+    } finally {
+      setCompareLoading(false)
+    }
+  }
+
   const loadDashboard = async (nextFilters) => {
     setLoading(true)
     setError('')
+    setCompareSeries([])
     try {
       const [
         dashboardResult,
@@ -241,6 +299,13 @@ function TrendChartPage() {
   const keywordChartData = buildSeriesChartData(keywordSeries, keywordMetric, 'keyword')
   const topicChartData = buildSeriesChartData(topicSeries, topicMetric, 'topic')
   const journalChartData = buildSeriesChartData(journalSeries, journalMetric, 'journal')
+  const compareChartData = buildSeriesChartData(compareSeries, compareMetric, 'compare')
+  const compareOptions =
+    compareType === 'keyword'
+      ? options.keywords
+      : compareType === 'topic'
+        ? options.topics
+        : options.journals
 
   if (loading && !publicationTrend.length) {
     return (
@@ -419,6 +484,126 @@ function TrendChartPage() {
           <small>Peak score</small>
         </article>
       </div>
+
+      <article className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <span className={styles.panelEyebrow}>Side-by-side analysis</span>
+            <h2 className={styles.panelTitle}>Compare research trends</h2>
+          </div>
+          <div className={styles.metricSwitch}>
+            <button
+              type="button"
+              className={compareMetric === 'paperCount' ? styles.metricActive : ''}
+              onClick={() => setCompareMetric('paperCount')}
+            >
+              Papers
+            </button>
+            <button
+              type="button"
+              className={compareMetric === 'citationCount' ? styles.metricActive : ''}
+              onClick={() => setCompareMetric('citationCount')}
+            >
+              Citations
+            </button>
+          </div>
+        </div>
+
+        <form className={styles.compareForm} onSubmit={handleCompare}>
+          <div className={styles.compareType}>
+            <label className={styles.filterLabel} htmlFor="compare-type">Compare by</label>
+            <select
+              id="compare-type"
+              className={styles.select}
+              value={compareType}
+              onChange={handleCompareTypeChange}
+            >
+              <option value="keyword">Keywords</option>
+              <option value="topic">Topics</option>
+              <option value="journal">Journals</option>
+            </select>
+          </div>
+
+          <div className={styles.comparePicker}>
+            <span className={styles.filterLabel}>
+              Select 2-{COLORS.length} items
+            </span>
+            <div className={styles.compareChoices}>
+              {compareOptions.map((item) => {
+                const isSelected = compareIds.includes(item.id)
+                return (
+                  <label
+                    key={item.id}
+                    className={`${styles.compareChoice} ${isSelected ? styles.compareChoiceActive : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleCompareIdChange(item.id)}
+                    />
+                    <span>{item.name}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className={styles.compareSubmit}>
+            <span>{compareIds.length} selected</span>
+            <button type="submit" className={styles.button} disabled={compareLoading}>
+              {compareLoading ? 'Comparing...' : 'Compare'}
+            </button>
+          </div>
+        </form>
+
+        {compareError && <p className={styles.compareError}>{compareError}</p>}
+
+        <div className={styles.chartWrap}>
+          {compareLoading ? (
+            <Skeleton variant="chart" />
+          ) : compareChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={compareChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="period" stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11 }} />
+                <YAxis stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11 }} />
+                <Tooltip contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 10 }} />
+                {compareSeries.map((series, index) => (
+                  <Line
+                    key={series.id}
+                    type="monotone"
+                    dataKey={`compare_${series.id}`}
+                    name={series.name}
+                    stroke={COLORS[index % COLORS.length]}
+                    strokeWidth={3}
+                    connectNulls
+                    dot={{ r: 3 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className={styles.emptyText}>
+              Select research entities above to compare their performance over time.
+            </p>
+          )}
+        </div>
+
+        {compareSeries.length > 0 && (
+          <div className={styles.seriesLegend}>
+            {compareSeries.map((series, index) => (
+              <Link
+                key={series.id}
+                to={getCompareLink(compareType, series)}
+                className={styles.seriesLegendItem}
+              >
+                <span style={{ background: COLORS[index % COLORS.length] }} />
+                {series.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </article>
 
       <article className={styles.panel}>
         <div className={styles.panelHeader}>
