@@ -1,28 +1,38 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getFollowedTopics, getFollowedJournals, unfollowTopic, unfollowJournal } from '../../services/followService'
+import {
+  getFollowedAuthors,
+  getFollowedJournals,
+  getFollowedTopics,
+  unfollowJournal,
+  unfollowTopic,
+} from '../../services/followService'
 import Skeleton from '../../components/Skeleton'
 import styles from './simpleListPage.module.css'
 
 function FollowingPage() {
   const [topics, setTopics] = useState([])
   const [journals, setJournals] = useState([])
+  const [authors, setAuthors] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     async function fetchFollowing() {
       try {
-        const [topicsResult, journalsResult] = await Promise.all([
+        const [topicsResult, journalsResult, authorsResult] = await Promise.all([
           getFollowedTopics(),
           getFollowedJournals(),
+          getFollowedAuthors(),
         ])
         setTopics(topicsResult ?? [])
         setJournals(journalsResult ?? [])
+        setAuthors(authorsResult ?? [])
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load following data')
         setTopics([])
         setJournals([])
+        setAuthors([])
       } finally {
         setLoading(false)
       }
@@ -93,6 +103,30 @@ function FollowingPage() {
               <button type="button" className={styles.unfollowBtn} onClick={() => handleUnfollowTopic(id)}>
                 Unfollow
               </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* Authors Section */}
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.1rem', marginTop: '1.5rem' }}>Authors</h2>
+      <ul className={styles.list}>
+        {authors.length === 0 && (
+          <li className={styles.listItem}>
+            <span className={styles.listItemText}>No followed authors yet.</span>
+          </li>
+        )}
+        {authors.map((item) => {
+          const id = item.targetId ?? item.id ?? item
+          const name = item.name ?? item.author ?? String(item)
+          return (
+            <li key={id} className={styles.listItem}>
+              <Link
+                className={styles.listItemText}
+                to={`/authors/id/${encodeURIComponent(id)}`}
+              >
+                {name}
+              </Link>
             </li>
           )
         })}

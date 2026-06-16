@@ -82,3 +82,10 @@ export async function unfollowJournal(journalId) {
   const { data: response } = await api.delete(`/follows/journals/${normalizedJournalId}`)
   return unwrapResponse(response, 'Failed to unfollow journal.')
 }
+
+export async function getFollowedAuthors() {
+  const { data: response } = await api.get('/follows/authors')
+  const result = unwrapResponse(response, 'Failed to load followed authors.')
+
+  return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Author'))
+}
