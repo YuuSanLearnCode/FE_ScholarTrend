@@ -141,6 +141,7 @@
   gap: 0.65rem;
 }
 
+.followButton,
 .bookmarkButton,
 .secondaryButton,
 .pdfButton {
@@ -157,6 +158,14 @@
   transition: var(--transition);
 }
 
+.followButton {
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: var(--color-brand);
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.08);
+  text-decoration: none;
+}
+
 .bookmarkButton {
   border: 1px solid var(--color-brand);
   background: var(--color-brand);
@@ -170,15 +179,27 @@
   fill: currentColor;
 }
 
+.followButton:hover:not(:disabled),
 .bookmarkButton:hover:not(:disabled),
 .secondaryButton:hover,
 .pdfButton:hover {
   transform: translateY(-1px);
 }
 
+.followButton:disabled {
+  opacity: 0.8;
+  cursor: default;
+}
+
 .bookmarkButton:disabled {
   opacity: 0.65;
   cursor: wait;
+}
+
+.followingButton {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
 }
 
 .bookmarked {
@@ -209,6 +230,7 @@
   background: #fee2e2;
 }
 
+.followError,
 .bookmarkError {
   margin: 0.75rem 0 0;
   color: var(--color-danger);

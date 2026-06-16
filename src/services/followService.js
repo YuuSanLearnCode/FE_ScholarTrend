@@ -117,3 +117,14 @@ export async function getFollowedPapers() {
 
   return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Paper'))
 }
+
+export async function followPaper(paperId) {
+  const normalizedPaperId = Number(paperId)
+  if (!Number.isInteger(normalizedPaperId) || normalizedPaperId <= 0) {
+    throw new Error('Invalid paper id.')
+  }
+
+  const { data: response } = await api.post(`/follows/papers/${normalizedPaperId}`)
+  const result = unwrapResponse(response, 'Failed to follow paper.')
+  return normalizeFollow(result, 'Paper')
+}

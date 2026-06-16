@@ -1,8 +1,27 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { followPaper } from '../services/followService'
 import styles from './PaperCard.module.css'
 
-function PaperCard({ paper }) {
+function PaperCard({ paper, canFollow = false, isFollowing = false, onFollowSuccess }) {
   const keywords = paper.keywords ?? []
+  const [followLoading, setFollowLoading] = useState(false)
+  const [followError, setFollowError] = useState('')
+
+  const handleFollow = async () => {
+    if (!paper?.id || isFollowing || followLoading) return
+
+    setFollowLoading(true)
+    setFollowError('')
+    try {
+      await followPaper(paper.id)
+      onFollowSuccess?.(paper.id)
+    } catch (err) {
+      setFollowError(err.response?.data?.message || err.message || 'Failed to follow paper.')
+    } finally {
+      setFollowLoading(false)
+    }
+  }
 
   return (
     <article className={styles.card}>
@@ -56,6 +75,27 @@ function PaperCard({ paper }) {
           ))}
         </div>
       )}
+
+      <div className={styles.cardActions}>
+        <Link to={`/papers/${paper.id}`} className={styles.detailLink}>
+          View details
+        </Link>
+        {canFollow ? (
+          <button
+            type="button"
+            className={`${styles.followButton} ${isFollowing ? styles.following : ''}`}
+            onClick={handleFollow}
+            disabled={followLoading || isFollowing}
+          >
+            {followLoading ? 'Following...' : isFollowing ? 'Following' : 'Follow paper'}
+          </button>
+        ) : (
+          <Link to="/login" className={styles.followButton}>
+            Sign in to follow
+          </Link>
+        )}
+      </div>
+      {followError && <p className={styles.followError}>{followError}</p>}
     </article>
   )
 }
