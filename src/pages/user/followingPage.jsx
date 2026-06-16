@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   getFollowedAuthors,
   getFollowedJournals,
+  getFollowedPapers,
   getFollowedTopics,
   unfollowAuthor,
   unfollowJournal,
@@ -15,25 +16,29 @@ function FollowingPage() {
   const [topics, setTopics] = useState([])
   const [journals, setJournals] = useState([])
   const [authors, setAuthors] = useState([])
+  const [papers, setPapers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
     async function fetchFollowing() {
       try {
-        const [topicsResult, journalsResult, authorsResult] = await Promise.all([
+        const [topicsResult, journalsResult, authorsResult, papersResult] = await Promise.all([
           getFollowedTopics(),
           getFollowedJournals(),
           getFollowedAuthors(),
+          getFollowedPapers(),
         ])
         setTopics(topicsResult ?? [])
         setJournals(journalsResult ?? [])
         setAuthors(authorsResult ?? [])
+        setPapers(papersResult ?? [])
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load following data')
         setTopics([])
         setJournals([])
         setAuthors([])
+        setPapers([])
       } finally {
         setLoading(false)
       }
@@ -140,6 +145,30 @@ function FollowingPage() {
               <button type="button" className={styles.unfollowBtn} onClick={() => handleUnfollowAuthor(id)}>
                 Unfollow
               </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* Papers Section */}
+      <h2 className={styles.pageTitle} style={{ fontSize: '1.1rem', marginTop: '1.5rem' }}>Papers</h2>
+      <ul className={styles.list}>
+        {papers.length === 0 && (
+          <li className={styles.listItem}>
+            <span className={styles.listItemText}>No followed papers yet.</span>
+          </li>
+        )}
+        {papers.map((item) => {
+          const id = item.targetId ?? item.id ?? item
+          const name = item.name ?? item.paper ?? String(item)
+          return (
+            <li key={id} className={styles.listItem}>
+              <Link
+                className={styles.listItemText}
+                to={`/papers/${encodeURIComponent(id)}`}
+              >
+                {name}
+              </Link>
             </li>
           )
         })}
