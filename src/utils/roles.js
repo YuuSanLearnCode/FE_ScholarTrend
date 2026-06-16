@@ -35,6 +35,7 @@ export function getNavItems(role) {
   const common = [
     { to: '/', label: 'Home' },
     { to: '/search', label: 'Search' },
+    { to: '/authors', label: 'Authors' },
     { to: '/trends', label: 'Trends' },
     { to: '/reports/publications', label: 'Reports' },
   ]

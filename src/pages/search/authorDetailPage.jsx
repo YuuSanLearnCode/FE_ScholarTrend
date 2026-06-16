@@ -1,32 +1,44 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
-import { getPapersByAuthor } from '../../services/paperService'
+import { getAuthorById, getAuthorByName } from '../../services/authorService'
 import styles from './authorDetailPage.module.css'
 
+function formatNumber(value) {
+  return new Intl.NumberFormat('en').format(value ?? 0)
+}
+
 function AuthorDetailPage() {
-  const { authorName } = useParams()
-  const [papers, setPapers] = useState([])
+  const { authorId, authorName } = useParams()
+  const [author, setAuthor] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    async function fetchPapers() {
-      setLoading(true)
-      setError('')
+    let active = true
+
+    async function fetchAuthor() {
       try {
-        const result = await getPapersByAuthor(authorName)
-        setPapers(result.items)
+        const result = authorId
+          ? await getAuthorById(authorId)
+          : await getAuthorByName(authorName)
+        if (active) setAuthor(result)
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load author papers')
-        setPapers([])
+        if (active) {
+          setError(err.response?.data?.message || err.message || 'Failed to load author details.')
+          setAuthor(null)
+        }
       } finally {
-        setLoading(false)
+        if (active) setLoading(false)
       }
     }
-    fetchPapers()
-  }, [authorName])
+
+    fetchAuthor()
+    return () => {
+      active = false
+    }
+  }, [authorId, authorName])
 
   if (loading) {
     return (
@@ -37,23 +49,67 @@ function AuthorDetailPage() {
     )
   }
 
-  if (error) {
+  if (error || !author) {
     return (
       <section className={styles.page}>
-        <p>{error}</p>
+        <div className={styles.errorState}>
+          <strong>Author could not be loaded</strong>
+          <p>{error}</p>
+          <Link to="/authors">Back to authors</Link>
+        </div>
       </section>
     )
   }
 
   return (
     <section className={styles.page}>
-      <div className={styles.header}>
-        <h1 className={styles.title}>{authorName}</h1>
-        <p className={styles.subtitle}>
-          {papers.length} paper{papers.length !== 1 ? 's' : ''} authored
-        </p>
+      <header className={styles.hero}>
+        <div>
+          <span className={styles.eyebrow}>Research author</span>
+          <h1>{author.name}</h1>
+          <p>{author.affiliation || 'Affiliation not specified'}</p>
+          <div className={styles.metaLine}>
+            {author.country && <span>{author.country}</span>}
+            {author.externalId && <span>External ID {author.externalId}</span>}
+          </div>
+        </div>
+        <Link
+          className={styles.primaryLink}
+          to={`/search/results?query=${encodeURIComponent(author.name)}&searchType=Author&page=1&pageSize=10`}
+        >
+          View all papers
+        </Link>
+      </header>
+
+      <div className={styles.statsGrid}>
+        <article>
+          <span>Papers</span>
+          <strong>{formatNumber(author.paperCount)}</strong>
+        </article>
+        <article>
+          <span>Total citations</span>
+          <strong>{formatNumber(author.totalCitations)}</strong>
+        </article>
+        <article>
+          <span>H-index</span>
+          <strong>{formatNumber(author.hIndex)}</strong>
+        </article>
+        <article>
+          <span>Recent papers</span>
+          <strong>{formatNumber(author.recentPapers.length)}</strong>
+        </article>
       </div>
-      <SearchResultsList papers={papers} />
+
+      <section className={styles.recentSection}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <span className={styles.eyebrow}>Latest research</span>
+            <h2>Recent papers</h2>
+          </div>
+          <span>{author.recentPapers.length} shown</span>
+        </div>
+        <SearchResultsList papers={author.recentPapers} />
+      </section>
     </section>
   )
 }
