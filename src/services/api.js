@@ -17,7 +17,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const isLoginRequest = error.config?.url?.endsWith('/auth/login')
+    const requestUrl = error.config?.url || ''
+    const isLoginRequest =
+      requestUrl.endsWith('/auth/login') || requestUrl.endsWith('/auth/google-login')
 
     if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem('token')

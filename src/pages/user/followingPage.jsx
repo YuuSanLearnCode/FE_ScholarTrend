@@ -100,11 +100,32 @@ function FollowingPage() {
     )
   }
 
+  const totalFollowing = topics.length + authors.length + papers.length + journals.length
+  const summaryItems = [
+    { label: 'Total following', value: totalFollowing },
+    { label: 'Topics', value: topics.length },
+    { label: 'Authors', value: authors.length },
+    { label: 'Papers', value: papers.length },
+    { label: 'Journals', value: journals.length },
+  ]
+
   return (
     <section className={styles.panel}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>My Following</h1>
+        <div>
+          <h1 className={styles.pageTitle}>My Following</h1>
+          <p className={styles.pageSubtitle}>See everything this user is following in one place.</p>
+        </div>
       </div>
+
+      <section className={styles.summaryGrid} aria-label="Following summary">
+        {summaryItems.map((item) => (
+          <article key={item.label} className={styles.summaryCard}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </article>
+        ))}
+      </section>
 
       {/* Topics Section */}
       <h2 className={styles.pageTitle} style={{ fontSize: '1.1rem', marginTop: '1rem' }}>Topics</h2>

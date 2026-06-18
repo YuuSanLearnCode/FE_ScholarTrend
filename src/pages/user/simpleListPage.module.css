@@ -41,6 +41,45 @@
   letter-spacing: -0.02em;
 }
 
+.pageSubtitle {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 35%),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.summaryCard span {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.summaryCard strong {
+  color: var(--color-text);
+  font-size: 1.55rem;
+  line-height: 1;
+}
+
 .list {
   list-style: none;
   padding: 0;
@@ -405,6 +444,10 @@
 
   .settingsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .settingsActions {
