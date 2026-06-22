@@ -15,7 +15,8 @@ function Layout() {
   );
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-  const navItems = getNavItems(token ? userRole : null);
+  const isAuthenticated = Boolean(token);
+  const navItems = getNavItems(isAuthenticated ? userRole : null);
 
   useEffect(() => {
     const handleAvatarUpdated = (event) => {
@@ -29,10 +30,7 @@ function Layout() {
   }, [userId]);
 
   useEffect(() => {
-    const canViewNotifications =
-      token && [ROLES.RESEARCHER, ROLES.ADMIN].includes(userRole);
-
-    if (!canViewNotifications) {
+    if (!isAuthenticated) {
       return undefined;
     }
 
@@ -47,15 +45,17 @@ function Layout() {
     };
 
     refreshUnreadCount();
+    const intervalId = window.setInterval(refreshUnreadCount, 30000);
     window.addEventListener("focus", refreshUnreadCount);
     window.addEventListener("notifications-updated", refreshUnreadCount);
 
     return () => {
       active = false;
+      window.clearInterval(intervalId);
       window.removeEventListener("focus", refreshUnreadCount);
       window.removeEventListener("notifications-updated", refreshUnreadCount);
     };
-  }, [token, userRole]);
+  }, [isAuthenticated]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -113,6 +113,38 @@ function Layout() {
           <div className={styles.authActions}>
             {token ? (
               <>
+                <NavLink
+                  to="/notifications"
+                  className={({ isActive }) =>
+                    `${styles.notificationButton} ${
+                      isActive ? styles.notificationButtonActive : ""
+                    }`
+                  }
+                  aria-label={
+                    unreadNotifications > 0
+                      ? `${unreadNotifications} unread notifications`
+                      : "Notifications"
+                  }
+                  title="Notifications"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 15.5V10a6 6 0 0 0-12 0v5.5L4.8 17h14.4L18 15.5Z" />
+                    <path d="M10 20a2 2 0 0 0 4 0" />
+                  </svg>
+                  {unreadNotifications > 0 && (
+                    <span className={styles.notificationBadge}>
+                      {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </span>
+                  )}
+                </NavLink>
                 <div className={styles.userGreeting}>
                   <span className={styles.userAvatar}>
                     {userAvatar ? (

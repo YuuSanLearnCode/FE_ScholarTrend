@@ -144,9 +144,9 @@ function App() {
         {
           path: "notifications",
           element: (
-            <ProtectedRoute allowedRoles={[ROLES.RESEARCHER, ROLES.ADMIN]}>
+            <RequireAuth>
               <NotificationsPage />
-            </ProtectedRoute>
+            </RequireAuth>
           ),
         },
 

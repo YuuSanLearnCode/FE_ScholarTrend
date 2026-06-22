@@ -131,6 +131,40 @@
   flex-shrink: 0;
 }
 
+.notificationButton {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.notificationButton:hover,
+.notificationButtonActive {
+  border-color: rgba(37, 99, 235, 0.35);
+  background: #eff6ff;
+  color: var(--color-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.notificationButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationButton .notificationBadge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  box-shadow: var(--shadow-sm);
+}
+
 .userGreeting {
   display: flex;
   align-items: center;
@@ -281,10 +315,15 @@
     display: none;
   }
 
-  .notificationBadge {
+  .link .notificationBadge {
     position: absolute;
     top: -0.2rem;
     right: -0.25rem;
+  }
+
+  .notificationButton .notificationBadge {
+    top: -0.35rem;
+    right: -0.35rem;
   }
 
   .link {
