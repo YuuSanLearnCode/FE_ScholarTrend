@@ -129,6 +129,35 @@ export async function resendVerification({ email }) {
   return response
 }
 
+// Gửi email reset mật khẩu
+export async function forgotPassword({ email }) {
+  const { data: response } = await api.post('/auth/forgot-password', {
+    email: email.trim(),
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to send reset password email.')
+  }
+
+  return response
+}
+
+// Reset mật khẩu bằng token từ email
+export async function resetPassword({ email, token, newPassword, confirmNewPassword }) {
+  const { data: response } = await api.post('/auth/reset-password', {
+    email: email.trim(),
+    token,
+    newPassword,
+    confirmNewPassword,
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to reset password.')
+  }
+
+  return response
+}
+
 export function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('refreshToken')

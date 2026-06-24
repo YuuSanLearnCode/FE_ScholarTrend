@@ -235,6 +235,14 @@ function LoginPage() {
               </button>
             </div>
           </div>
+          <div style={{ textAlign: "right", marginTop: "-0.25rem" }}>
+            <Link
+              to="/forgot-password"
+              style={{ fontSize: "0.78rem", color: "var(--color-brand-light)", textDecoration: "none" }}
+            >
+              Forgot password?
+            </Link>
+          </div>
           {error && <p className={styles.error}>{error}</p>}
           {resendSuccess && <p className={styles.success}>{resendSuccess}</p>}
           {showResend && !resendSuccess && (

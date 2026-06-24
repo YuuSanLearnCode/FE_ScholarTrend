@@ -31,6 +31,8 @@ import AdminApiConfigPage from "./pages/admin/AdminApiConfigPage";
 
 // Verify Email
 import VerifyEmailPage from "./pages/auth/verifyEmailPage";
+import ForgotPasswordPage from "./pages/auth/forgotPasswordPage";
+import ResetPasswordPage from "./pages/auth/resetPasswordPage";
 
 // Error Pages
 import NotFoundPage from "./pages/notFoundPage";
@@ -69,6 +71,8 @@ function App() {
     { path: "/login", element: <LoginPage /> },
     { path: "/register", element: <RegisterPage /> },
     { path: "/verify-email", element: <VerifyEmailPage /> },
+    { path: "/forgot-password", element: <ForgotPasswordPage /> },
+    { path: "/reset-password", element: <ResetPasswordPage /> },
 
     // ─── Admin (chỉ Admin) ───
     {
