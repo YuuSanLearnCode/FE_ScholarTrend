@@ -96,8 +96,66 @@ export async function updateProfile({ fullName, institution, researchField }) {
 }
 
 export async function changePassword(data) {
-  const res = await api.put('/auth/change-password', data)
-  return res.data
+  const { data: response } = await api.post('/auth/change-password', data)
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to change password.')
+  }
+  return response
+}
+
+export async function verifyEmail({ email, token }) {
+  const { data: response } = await api.post('/auth/verify-email', {
+    email,
+    token,
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Email verification failed.')
+  }
+
+  return response
+}
+
+// Gửi lại email xác nhận
+export async function resendVerification({ email }) {
+  const { data: response } = await api.post('/auth/resend-verification', {
+    email: email.trim(),
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to resend verification email.')
+  }
+
+  return response
+}
+
+// Gửi email reset mật khẩu
+export async function forgotPassword({ email }) {
+  const { data: response } = await api.post('/auth/forgot-password', {
+    email: email.trim(),
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to send reset password email.')
+  }
+
+  return response
+}
+
+// Reset mật khẩu bằng token từ email
+export async function resetPassword({ email, token, newPassword, confirmNewPassword }) {
+  const { data: response } = await api.post('/auth/reset-password', {
+    email: email.trim(),
+    token,
+    newPassword,
+    confirmNewPassword,
+  })
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to reset password.')
+  }
+
+  return response
 }
 
 export function logout() {

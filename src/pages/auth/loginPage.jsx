@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { validateEmail, validatePassword } from "../../utils/validation";
-import { googleLogin, login } from "../../services/authService";
+import { googleLogin, login, resendVerification } from "../../services/authService";
 import styles from "./auth.module.css";
 
 const GOOGLE_SCRIPT_ID = "google-identity-services";
@@ -37,11 +37,15 @@ function LoginPage() {
   const location = useLocation();
   const googleButtonRef = useRef(null);
   const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [googleToken, setGoogleToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState("");
 
   const navigateAfterAuth = (result) => {
     const role = result?.roles?.[0]?.toLowerCase();
@@ -144,12 +148,19 @@ function LoginPage() {
 
     setLoading(true);
     setError("");
+    setResendSuccess("");   // Xóa thông báo xanh cũ
+    setShowResend(false);   // Ẩn nút Resend cũ
 
     try {
       const result = await login(form);
       navigateAfterAuth(result);
     } catch (err) {
-      setError(getAuthErrorMessage(err, "Login failed. Please check your credentials."));
+      const msg = getAuthErrorMessage(err, "Login failed. Please check your credentials.");
+      setError(msg);
+      // Nếu lỗi liên quan đến email chưa xác nhận → hiện nút resend
+      if (msg.toLowerCase().includes("confirm your email") || msg.toLowerCase().includes("verify")) {
+        setShowResend(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -201,18 +212,71 @@ function LoginPage() {
           </div>
           <div className={styles.fieldGroup}>
             <label htmlFor="login-password" className={styles.label}>Password</label>
-            <input
-              id="login-password"
-              className={styles.input}
-              type="password"
-              autoComplete="current-password"
-              required
-              placeholder="........"
-              value={form.password}
-              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-            />
+            <div className={styles.passwordWrapper}>
+              <input
+                id="login-password"
+                className={styles.input}
+                type={showPassword ? "text" : "password"}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+              />
+              <button 
+                type="button" 
+                className={styles.eyeButton}
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex="-1"
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                )}
+              </button>
+            </div>
+          </div>
+          <div style={{ textAlign: "right", marginTop: "-0.25rem" }}>
+            <Link
+              to="/forgot-password"
+              style={{ fontSize: "0.78rem", color: "var(--color-brand-light)", textDecoration: "none" }}
+            >
+              Forgot password?
+            </Link>
           </div>
           {error && <p className={styles.error}>{error}</p>}
+          {resendSuccess && <p className={styles.success}>{resendSuccess}</p>}
+          {showResend && !resendSuccess && (
+            <div style={{ marginTop: "0.25rem" }}>
+              <p style={{ margin: "0 0 0.5rem", color: "var(--color-text-muted)", fontSize: "0.8125rem" }}>
+                Didn't receive the email?
+              </p>
+              <button
+                type="button"
+                className={styles.button}
+                style={{ background: "var(--color-surface)", color: "var(--color-brand)", border: "1px solid var(--color-brand-border)", marginTop: 0 }}
+                disabled={resendLoading}
+                onClick={async () => {
+                  if (!form.email) {
+                    setError("Please enter your email address first.");
+                    return;
+                  }
+                  setResendLoading(true);
+                  setError("");
+                  try {
+                    await resendVerification({ email: form.email });
+                    setResendSuccess("Verification email sent! Please check your inbox.");
+                    setShowResend(false);
+                  } catch (err) {
+                    setError(err.message || "Failed to resend. Please try again.");
+                  } finally {
+                    setResendLoading(false);
+                  }
+                }}
+              >
+                {resendLoading ? "Sending..." : "Resend Verification Email"}
+              </button>
+            </div>
+          )}
           <button type="submit" className={styles.button} disabled={loading || googleLoading}>
             {loading ? "Signing in..." : "Sign In"}
           </button>
