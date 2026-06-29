@@ -373,6 +373,11 @@
   background: #e8f2ee;
 }
 
+.methodPost {
+  color: #2e6a5e;
+  background: #def4ed;
+}
+
 .methodPut {
   color: #7d663e;
   background: #f5efdf;
@@ -697,6 +702,84 @@
   color: #30443e;
 }
 
+.approveBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e7eee9;
+  border-radius: 11px;
+}
+
+.approveBar strong,
+.approveBar span {
+  display: block;
+}
+
+.approveBar strong {
+  color: #27332f;
+  font-size: 11px;
+}
+
+.approveBar span {
+  margin-top: 2px;
+  color: #8f9692;
+  font-size: 9px;
+}
+
+.approveActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.approveActions button {
+  min-height: 32px;
+  padding: 0 10px;
+  color: #315f55;
+  background: #edf5f2;
+  border: 1px solid #d3e4df;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.approveActions button:hover:not(:disabled) {
+  background: #e3f0eb;
+  border-color: #bdd8cf;
+}
+
+.approveActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.approveActions .approveButton {
+  color: #fff;
+  background: #2d6558;
+  border-color: #2d6558;
+}
+
+.approveActions .approveButton:hover:not(:disabled) {
+  background: #245549;
+  border-color: #245549;
+}
+
+.approveNotice {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  color: #2f6a5b;
+  background: #edf7f3;
+  border: 1px solid #d0e7de;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
 .paperList {
   display: grid;
   gap: 10px;
@@ -745,6 +828,53 @@
   font-style: normal;
   font-weight: 750;
   text-transform: capitalize;
+}
+
+.paperTitleRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.paperCheckbox {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  cursor: pointer;
+}
+
+.paperCheckbox input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.paperCheckbox span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border: 1px solid #cddbd5;
+  border-radius: 5px;
+}
+
+.paperCheckbox input:checked + span {
+  background: #2d6558;
+  border-color: #2d6558;
+  box-shadow: inset 0 0 0 4px #fff;
+}
+
+.paperCheckbox input:disabled {
+  cursor: not-allowed;
+}
+
+.paperCheckbox input:disabled + span {
+  background: #f0f1ef;
+  border-color: #e2e5e1;
 }
 
 .paperCard p {
@@ -855,5 +985,15 @@
 
   .syncDetailStats {
     grid-template-columns: 1fr;
+  }
+
+  .approveBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .approveActions,
+  .approveActions button {
+    width: 100%;
   }
 }

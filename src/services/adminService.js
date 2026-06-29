@@ -121,3 +121,15 @@ export async function getPendingSyncJobById(syncId) {
 
   return response
 }
+
+export async function approvePendingSyncPapers(syncId, pendingPaperIds) {
+  const { data: response } = await api.post(`/admin/sync/pending/${syncId}/approve`, {
+    pendingPaperIds,
+  })
+
+  if (response && typeof response === 'object' && 'success' in response) {
+    return unwrapResponse(response, 'Failed to approve pending sync papers.')
+  }
+
+  return response
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import {
+  approvePendingSyncPapers,
   getAdminStats,
   getPendingSyncJobById,
   getPendingSyncJobs,
@@ -83,6 +84,20 @@ function formatAuthors(authors) {
   return authors.filter(Boolean).join(", ");
 }
 
+function getPaperId(paper) {
+  return paper?.id;
+}
+
+function canApprovePaper(paper) {
+  const status = String(paper?.status || "").toLowerCase();
+  return getPaperId(paper) != null && !["approved", "rejected", "imported"].includes(status);
+}
+
+function getSelectablePaperIds(papers) {
+  if (!Array.isArray(papers)) return [];
+  return papers.filter(canApprovePaper).map(getPaperId);
+}
+
 function AdminApiConfigPage() {
   const [connection, setConnection] = useState("checking");
   const [message, setMessage] = useState("Checking the admin API...");
@@ -93,6 +108,10 @@ function AdminApiConfigPage() {
   const [selectedSyncJob, setSelectedSyncJob] = useState(null);
   const [syncDetailLoading, setSyncDetailLoading] = useState(false);
   const [syncDetailError, setSyncDetailError] = useState("");
+  const [selectedPaperIds, setSelectedPaperIds] = useState([]);
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [approveError, setApproveError] = useState("");
+  const [approveNotice, setApproveNotice] = useState("");
 
   const testConnection = async () => {
     setConnection("checking");
@@ -161,6 +180,7 @@ function AdminApiConfigPage() {
     setPendingLoading(true);
     setPendingError("");
     setSyncDetailError("");
+    setApproveError("");
 
     try {
       const result = await getPendingSyncJobs(limit);
@@ -168,6 +188,7 @@ function AdminApiConfigPage() {
       setPendingJobs(jobs);
       if (selectedSyncJob && !jobs.some((job) => String(job.id) === String(selectedSyncJob.id))) {
         setSelectedSyncJob(null);
+        setSelectedPaperIds([]);
       }
     } catch (error) {
       setPendingJobs([]);
@@ -185,12 +206,16 @@ function AdminApiConfigPage() {
     if (!job?.id) return;
 
     setSelectedSyncJob(job);
+    setSelectedPaperIds(getSelectablePaperIds(job.papers));
     setSyncDetailLoading(true);
     setSyncDetailError("");
+    setApproveError("");
+    setApproveNotice("");
 
     try {
       const result = await getPendingSyncJobById(job.id);
       setSelectedSyncJob(result || job);
+      setSelectedPaperIds(getSelectablePaperIds((result || job).papers));
     } catch (error) {
       setSyncDetailError(
         error.response?.data?.message ||
@@ -199,6 +224,74 @@ function AdminApiConfigPage() {
       );
     } finally {
       setSyncDetailLoading(false);
+    }
+  };
+
+  const togglePaperSelection = (paperId) => {
+    setSelectedPaperIds((current) => {
+      const exists = current.some((id) => String(id) === String(paperId));
+      if (exists) {
+        return current.filter((id) => String(id) !== String(paperId));
+      }
+      return [...current, paperId];
+    });
+  };
+
+  const selectAllPapers = () => {
+    setSelectedPaperIds(getSelectablePaperIds(selectedSyncJob?.papers));
+  };
+
+  const clearPaperSelection = () => {
+    setSelectedPaperIds([]);
+  };
+
+  const handleApproveSelectedPapers = async () => {
+    if (!selectedSyncJob?.id) return;
+
+    if (selectedPaperIds.length === 0) {
+      setApproveError("Select at least one paper to approve.");
+      setApproveNotice("");
+      return;
+    }
+
+    setApproveLoading(true);
+    setApproveError("");
+    setApproveNotice("");
+
+    try {
+      const result = await approvePendingSyncPapers(selectedSyncJob.id, selectedPaperIds);
+      const approved = formatNumber(result?.papersApproved);
+      const rejected = formatNumber(result?.papersRejected);
+
+      setApproveNotice(
+        result?.message ||
+          `Approval completed. Approved ${approved} paper(s), rejected ${rejected}.`,
+      );
+
+      try {
+        const jobsResult = await getPendingSyncJobs(Math.max(1, Number(pendingLimit) || 50));
+        setPendingJobs(normalizePendingSyncJobs(jobsResult));
+      } catch {
+        setPendingError("Approved, but could not refresh the pending sync list.");
+      }
+
+      try {
+        const detailResult = await getPendingSyncJobById(selectedSyncJob.id);
+        const nextDetail = detailResult || selectedSyncJob;
+        setSelectedSyncJob(nextDetail);
+        setSelectedPaperIds(getSelectablePaperIds(nextDetail.papers));
+      } catch {
+        setSelectedPaperIds([]);
+        setSyncDetailError("Approved, but could not refresh this sync detail.");
+      }
+    } catch (error) {
+      setApproveError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not approve the selected papers.",
+      );
+    } finally {
+      setApproveLoading(false);
     }
   };
 
@@ -323,6 +416,7 @@ function AdminApiConfigPage() {
           <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/status</code><small>Activate or deactivate</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending</code><small>Pending sync jobs</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending/:id</code><small>Sync job detail</small></div>
+          <div><span className={styles.methodPost}>POST</span><code>/admin/sync/pending/:id/approve</code><small>Approve pending papers</small></div>
         </div>
       </article>
 
@@ -413,7 +507,15 @@ function AdminApiConfigPage() {
                 <h3>Sync #{selectedSyncJob.id ?? "unknown"}</h3>
                 <p>{formatDate(selectedSyncJob.createdAt)}</p>
               </div>
-              <button type="button" onClick={() => setSelectedSyncJob(null)}>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedSyncJob(null);
+                  setSelectedPaperIds([]);
+                  setApproveError("");
+                  setApproveNotice("");
+                }}
+              >
                 Close
               </button>
             </div>
@@ -440,14 +542,62 @@ function AdminApiConfigPage() {
               </div>
             )}
 
+            <div className={styles.approveBar}>
+              <div>
+                <strong>{selectedPaperIds.length} selected</strong>
+                <span>Choose papers to import into the library.</span>
+              </div>
+              <div className={styles.approveActions}>
+                <button type="button" onClick={selectAllPapers} disabled={approveLoading}>
+                  Select all
+                </button>
+                <button type="button" onClick={clearPaperSelection} disabled={approveLoading}>
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  className={styles.approveButton}
+                  onClick={handleApproveSelectedPapers}
+                  disabled={approveLoading || selectedPaperIds.length === 0}
+                >
+                  {approveLoading ? "Approving..." : "Approve selected"}
+                </button>
+              </div>
+            </div>
+
+            {approveNotice && (
+              <div className={styles.approveNotice} role="status">
+                {approveNotice}
+              </div>
+            )}
+            {approveError && (
+              <div className={styles.syncError} role="alert">
+                {approveError}
+              </div>
+            )}
+
             <div className={styles.paperList}>
               {(selectedSyncJob.papers || []).length > 0 ? (
                 selectedSyncJob.papers.map((paper) => (
                   <article className={styles.paperCard} key={paper.id || paper.externalId}>
                     <div className={styles.paperCardHeader}>
-                      <div>
-                        <strong>{paper.title || "Untitled paper"}</strong>
-                        <span>{formatAuthors(paper.authors)}</span>
+                      <div className={styles.paperTitleRow}>
+                        <label className={styles.paperCheckbox}>
+                          <input
+                            type="checkbox"
+                            checked={selectedPaperIds.some(
+                              (id) => String(id) === String(getPaperId(paper)),
+                            )}
+                            disabled={!canApprovePaper(paper) || approveLoading}
+                            onChange={() => togglePaperSelection(getPaperId(paper))}
+                            aria-label={`Select ${paper.title || "paper"}`}
+                          />
+                          <span />
+                        </label>
+                        <div>
+                          <strong>{paper.title || "Untitled paper"}</strong>
+                          <span>{formatAuthors(paper.authors)}</span>
+                        </div>
                       </div>
                       <em>{paper.status || "Pending"}</em>
                     </div>
