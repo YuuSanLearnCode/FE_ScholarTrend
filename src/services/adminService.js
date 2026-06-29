@@ -67,8 +67,13 @@ export async function getUserById(userId) {
 }
 
 export async function updateUserRole(userId, role) {
-  const { data } = await api.put(`/admin/users/${userId}/role`, { role })
-  return data
+  const { data: response } = await api.patch(`/admin/users/${userId}/role`, { role })
+
+  if (response && typeof response === 'object' && 'success' in response) {
+    return unwrapResponse(response, 'Failed to update admin user role.')
+  }
+
+  return response
 }
 
 export async function updateUserStatus(userId, isActive) {

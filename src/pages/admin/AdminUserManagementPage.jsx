@@ -191,13 +191,25 @@ function AdminUserManagementPage() {
     setPendingId(id);
     setNotice("");
     try {
-      await updateUserRole(id, role);
+      const result = await updateUserRole(id, role);
+      const updatedUser = {
+        ...user,
+        ...(result || {}),
+        role: result?.role ?? role,
+        roles: result?.roles ?? [role],
+      };
+
       setUsers((current) =>
         current.map((item) =>
-          getUserId(item) === id ? { ...item, role, roles: [role] } : item,
+          String(getUserId(item)) === String(id) ? { ...item, ...updatedUser } : item,
         ),
       );
-      setNotice(`Role updated for ${getDisplayName(user)}.`);
+
+      if (String(getUserId(selectedUser)) === String(id)) {
+        setSelectedUser((current) => ({ ...current, ...updatedUser }));
+      }
+
+      setNotice(`Role updated for ${getDisplayName(updatedUser)}.`);
     } catch (requestError) {
       setError(requestError.response?.data?.message || "Could not update this user role.");
     } finally {
