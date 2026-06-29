@@ -8,6 +8,7 @@ import {
   getSyncLogs,
   getSyncSchedule,
   getSyncStatus,
+  getSyncStatusBySource,
   rejectPendingSyncJob,
   updateSyncDataSourceStatus,
   updateSyncSchedule,
@@ -151,6 +152,10 @@ function AdminApiConfigPage() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncStatusLoading, setSyncStatusLoading] = useState(true);
   const [syncStatusError, setSyncStatusError] = useState("");
+  const [sourceStatusName, setSourceStatusName] = useState("");
+  const [sourceStatusDetail, setSourceStatusDetail] = useState(null);
+  const [sourceStatusLoading, setSourceStatusLoading] = useState(false);
+  const [sourceStatusError, setSourceStatusError] = useState("");
   const [syncSchedule, setSyncSchedule] = useState(null);
   const [scheduleDraft, setScheduleDraft] = useState(() => buildScheduleDraft());
   const [syncScheduleLoading, setSyncScheduleLoading] = useState(true);
@@ -353,6 +358,39 @@ function AdminApiConfigPage() {
     } finally {
       setSyncStatusLoading(false);
     }
+  };
+
+  const loadSourceSyncStatus = async (sourceName) => {
+    const nextSourceName = String(sourceName || "").trim();
+
+    if (!nextSourceName) {
+      setSourceStatusError("Enter a source name to check.");
+      setSourceStatusDetail(null);
+      return;
+    }
+
+    setSourceStatusName(nextSourceName);
+    setSourceStatusLoading(true);
+    setSourceStatusError("");
+
+    try {
+      const result = await getSyncStatusBySource(nextSourceName);
+      setSourceStatusDetail(result || null);
+    } catch (error) {
+      setSourceStatusDetail(null);
+      setSourceStatusError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not load this source sync status.",
+      );
+    } finally {
+      setSourceStatusLoading(false);
+    }
+  };
+
+  const handleSourceStatusSubmit = (event) => {
+    event.preventDefault();
+    loadSourceSyncStatus(sourceStatusName);
   };
 
   const refreshSyncSchedule = async () => {
@@ -644,6 +682,14 @@ function AdminApiConfigPage() {
     ? syncStatus.recentSyncs
     : [];
   const lockedSourceCount = lockedSources.filter((source) => source?.isLocked).length;
+  const sourceNameOptions = Array.from(
+    new Set(
+      [
+        ...lockedSources.map((source) => source?.sourceName),
+        ...dataSources.map((source) => source?.name),
+      ].filter(Boolean),
+    ),
+  );
 
   return (
     <section className={styles.configPage}>
@@ -857,6 +903,58 @@ function AdminApiConfigPage() {
           </div>
         )}
 
+        <form className={styles.sourceStatusForm} onSubmit={handleSourceStatusSubmit}>
+          <label>
+            Source name
+            <input
+              type="text"
+              list="sync-source-names"
+              value={sourceStatusName}
+              onChange={(event) => {
+                setSourceStatusName(event.target.value);
+                setSourceStatusError("");
+              }}
+              placeholder="SemanticScholar"
+              disabled={sourceStatusLoading}
+            />
+          </label>
+          <datalist id="sync-source-names">
+            {sourceNameOptions.map((sourceName) => (
+              <option key={sourceName} value={sourceName} />
+            ))}
+          </datalist>
+          <button type="submit" disabled={sourceStatusLoading}>
+            {sourceStatusLoading ? "Checking..." : "Check source"}
+          </button>
+        </form>
+
+        {sourceStatusError && (
+          <div className={styles.syncError} role="alert">
+            {sourceStatusError}
+          </div>
+        )}
+
+        {sourceStatusDetail && (
+          <article className={styles.sourceStatusResult}>
+            <div className={styles.lockTop}>
+              <strong>{sourceStatusDetail.sourceName || sourceStatusName || "Unknown source"}</strong>
+              <em
+                className={
+                  sourceStatusDetail.isLocked ? styles.lockedBadge : styles.unlockedBadge
+                }
+              >
+                {sourceStatusDetail.isLocked ? "Locked" : "Unlocked"}
+              </em>
+            </div>
+            <div className={styles.lockMeta}>
+              <span><strong>{sourceStatusDetail.syncType || "Unknown"}</strong>Sync type</span>
+              <span><strong>{sourceStatusDetail.triggeredBy || "System"}</strong>Triggered by</span>
+              <span><strong>{formatDate(sourceStatusDetail.lockedAt)}</strong>Locked at</span>
+              <span><strong>{formatDate(sourceStatusDetail.expiresAt)}</strong>Expires at</span>
+            </div>
+          </article>
+        )}
+
         {syncStatusLoading ? (
           <div className={styles.statusSummary}>
             {Array.from({ length: 3 }, (_, index) => (
@@ -906,9 +1004,18 @@ function AdminApiConfigPage() {
                       >
                         <div className={styles.lockTop}>
                           <strong>{source.sourceName || "Unknown source"}</strong>
-                          <em className={source.isLocked ? styles.lockedBadge : styles.unlockedBadge}>
-                            {source.isLocked ? "Locked" : "Unlocked"}
-                          </em>
+                          <div className={styles.lockActions}>
+                            <em className={source.isLocked ? styles.lockedBadge : styles.unlockedBadge}>
+                              {source.isLocked ? "Locked" : "Unlocked"}
+                            </em>
+                            <button
+                              type="button"
+                              onClick={() => loadSourceSyncStatus(source.sourceName)}
+                              disabled={sourceStatusLoading || !source.sourceName}
+                            >
+                              Inspect
+                            </button>
+                          </div>
                         </div>
                         <div className={styles.lockMeta}>
                           <span><strong>{source.syncType || "Unknown"}</strong>Sync type</span>
@@ -1120,6 +1227,7 @@ function AdminApiConfigPage() {
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/schedule</code><small>Sync schedule</small></div>
           <div><span className={styles.methodPut}>PUT</span><code>/admin/sync/schedule</code><small>Update sync schedule</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/status</code><small>Live sync status</small></div>
+          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/status/:sourceName</code><small>Source sync status</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/logs</code><small>Sync history</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending</code><small>Pending sync jobs</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending/:id</code><small>Sync job detail</small></div>

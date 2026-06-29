@@ -734,6 +734,85 @@
   text-transform: uppercase;
 }
 
+.sourceStatusForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 13px;
+  background: #fbfcfa;
+  border: 1px solid #eceeeb;
+  border-radius: 11px;
+}
+
+.sourceStatusForm label {
+  display: grid;
+  gap: 6px;
+  color: #8d9490;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sourceStatusForm input {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  color: #35443f;
+  background: #fff;
+  border: 1px solid #dfe3df;
+  border-radius: 9px;
+  outline: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sourceStatusForm input:focus {
+  border-color: #8ea9a0;
+  box-shadow: 0 0 0 3px rgba(71, 114, 104, 0.08);
+}
+
+.sourceStatusForm button,
+.lockActions button {
+  min-height: 36px;
+  padding: 0 11px;
+  color: #315f55;
+  background: #edf5f2;
+  border: 1px solid #d3e4df;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.sourceStatusForm button {
+  align-self: end;
+}
+
+.sourceStatusForm button:hover:not(:disabled),
+.lockActions button:hover:not(:disabled) {
+  background: #e3f0eb;
+  border-color: #bdd8cf;
+}
+
+.sourceStatusForm button:disabled,
+.lockActions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.sourceStatusResult {
+  margin-bottom: 12px;
+  padding: 13px;
+  background: #fff;
+  border: 1px solid #d8e7e2;
+  border-radius: 11px;
+  box-shadow: 0 6px 18px rgba(45, 101, 88, 0.05);
+}
+
 .statusSectionGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -795,6 +874,19 @@
   font-style: normal;
   font-weight: 750;
   text-transform: capitalize;
+}
+
+.lockActions {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.lockActions button {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 9px;
 }
 
 .lockTop .lockedBadge {
@@ -1512,6 +1604,7 @@
   .dataSourceGrid,
   .scheduleFormGrid,
   .scheduleGrid,
+  .sourceStatusForm,
   .statusSectionGrid,
   .statusSummary,
   .routeGrid {
@@ -1552,6 +1645,7 @@
   }
 
   .pendingControls input,
+  .sourceStatusForm button,
   .syncRefreshButton {
     width: 100%;
   }
