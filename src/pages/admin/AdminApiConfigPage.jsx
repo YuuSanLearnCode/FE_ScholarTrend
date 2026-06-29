@@ -4,6 +4,7 @@ import {
   getAdminStats,
   getPendingSyncJobById,
   getPendingSyncJobs,
+  getSyncDataSources,
   getSyncLogs,
   rejectPendingSyncJob,
 } from "../../services/adminService";
@@ -72,6 +73,11 @@ function normalizeSyncLogs(result) {
   return Array.isArray(logs) ? logs : [];
 }
 
+function normalizeDataSources(result) {
+  const sources = result?.items || result?.sources || result?.data || result;
+  return Array.isArray(sources) ? sources : [];
+}
+
 function formatDate(value) {
   if (!value) return "Not available";
   const date = new Date(value);
@@ -108,6 +114,9 @@ function getSelectablePaperIds(papers) {
 function AdminApiConfigPage() {
   const [connection, setConnection] = useState("checking");
   const [message, setMessage] = useState("Checking the admin API...");
+  const [dataSources, setDataSources] = useState([]);
+  const [dataSourcesLoading, setDataSourcesLoading] = useState(true);
+  const [dataSourcesError, setDataSourcesError] = useState("");
   const [pendingJobs, setPendingJobs] = useState([]);
   const [pendingLimit, setPendingLimit] = useState(50);
   const [pendingLoading, setPendingLoading] = useState(true);
@@ -160,8 +169,26 @@ function AdminApiConfigPage() {
         setConnection("disconnected");
         setMessage(
           error.response?.data?.message ||
-            "The frontend could not reach the admin API. Verify the backend and token.",
+          "The frontend could not reach the admin API. Verify the backend and token.",
         );
+      });
+
+    getSyncDataSources()
+      .then((result) => {
+        if (!active) return;
+        setDataSources(normalizeDataSources(result));
+      })
+      .catch((error) => {
+        if (!active) return;
+        setDataSources([]);
+        setDataSourcesError(
+          error.response?.data?.message ||
+            error.message ||
+            "Could not load sync data sources.",
+        );
+      })
+      .finally(() => {
+        if (active) setDataSourcesLoading(false);
       });
 
     getPendingSyncJobs(50)
@@ -229,6 +256,25 @@ function AdminApiConfigPage() {
       );
     } finally {
       setPendingLoading(false);
+    }
+  };
+
+  const refreshDataSources = async () => {
+    setDataSourcesLoading(true);
+    setDataSourcesError("");
+
+    try {
+      const result = await getSyncDataSources();
+      setDataSources(normalizeDataSources(result));
+    } catch (error) {
+      setDataSources([]);
+      setDataSourcesError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not load sync data sources.",
+      );
+    } finally {
+      setDataSourcesLoading(false);
     }
   };
 
@@ -436,6 +482,61 @@ function AdminApiConfigPage() {
         <p className={styles.connectionMessage}>{message}</p>
       </article>
 
+      <article className={styles.routesPanel}>
+        <div className={styles.syncPanelHeader}>
+          <div>
+            <span className={styles.kicker}>Synchronization</span>
+            <h3>Data sources</h3>
+          </div>
+          <button
+            type="button"
+            className={styles.syncRefreshButton}
+            onClick={refreshDataSources}
+            disabled={dataSourcesLoading}
+          >
+            <Icon name="refresh" size={15} />
+            {dataSourcesLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+
+        {dataSourcesError && (
+          <div className={styles.syncError} role="alert">
+            {dataSourcesError}
+          </div>
+        )}
+
+        <div className={styles.dataSourceGrid}>
+          {dataSourcesLoading ? (
+            Array.from({ length: 3 }, (_, index) => (
+              <div className={styles.syncSkeleton} key={index}>
+                <span />
+                <span />
+              </div>
+            ))
+          ) : dataSources.length > 0 ? (
+            dataSources.map((source) => (
+              <article className={styles.dataSourceCard} key={source.id || source.name}>
+                <div className={styles.dataSourceTop}>
+                  <div>
+                    <strong>{source.name || "Unknown source"}</strong>
+                    <code>{source.baseUrl || "No base URL"}</code>
+                  </div>
+                  <em className={source.isActive ? styles.sourceActive : styles.sourceInactive}>
+                    {source.isActive ? "Active" : "Inactive"}
+                  </em>
+                </div>
+                <span>Last sync: {formatDate(source.lastSyncAt)}</span>
+              </article>
+            ))
+          ) : (
+            <div className={styles.syncEmpty}>
+              <Icon name="server" size={20} />
+              <p>No data sources configured.</p>
+            </div>
+          )}
+        </div>
+      </article>
+
       <div className={styles.contentGrid}>
         <article className={styles.panel}>
           <div className={styles.panelTitle}>
@@ -515,6 +616,7 @@ function AdminApiConfigPage() {
           <div><span className={styles.methodGet}>GET</span><code>/admin/users/:id</code><small>User detail</small></div>
           <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/role</code><small>Role update</small></div>
           <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/status</code><small>Activate or deactivate</small></div>
+          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/data-sources</code><small>Sync data sources</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/logs</code><small>Sync history</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending</code><small>Pending sync jobs</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending/:id</code><small>Sync job detail</small></div>

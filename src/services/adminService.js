@@ -107,6 +107,16 @@ export async function getSyncLogs(limit = 50) {
   return response
 }
 
+export async function getSyncDataSources() {
+  const { data: response } = await api.get('/admin/sync/data-sources')
+
+  if (response && typeof response === 'object' && 'success' in response) {
+    return unwrapResponse(response, 'Failed to load sync data sources.')
+  }
+
+  return response
+}
+
 export async function getPendingSyncJobs(limit = 50) {
   const { data: response } = await api.get('/admin/sync/pending', {
     params: { limit },
