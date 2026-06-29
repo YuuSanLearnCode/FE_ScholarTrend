@@ -406,6 +406,79 @@
   font-size: 8px;
 }
 
+.scheduleGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.scheduleItem {
+  min-width: 0;
+  padding: 12px;
+  background: #fbfcfa;
+  border: 1px solid #eceeeb;
+  border-radius: 11px;
+}
+
+.scheduleItem span,
+.scheduleItem strong {
+  display: block;
+}
+
+.scheduleItem span {
+  color: #8f9692;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scheduleItem strong {
+  margin-top: 5px;
+  overflow: hidden;
+  color: #26322e;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheduleEnabled {
+  color: #337061 !important;
+}
+
+.scheduleDisabled {
+  color: #9c554a !important;
+}
+
+.queryList {
+  padding: 13px;
+  background: #fbfcfa;
+  border: 1px solid #eceeeb;
+  border-radius: 11px;
+}
+
+.queryPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.queryPills span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 5px 8px;
+  color: #315f55;
+  background: #edf5f2;
+  border: 1px solid #d3e4df;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .dataSourceGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1062,6 +1135,7 @@
 @media (max-width: 800px) {
   .contentGrid,
   .dataSourceGrid,
+  .scheduleGrid,
   .routeGrid {
     grid-template-columns: 1fr;
   }

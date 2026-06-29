@@ -6,6 +6,7 @@ import {
   getPendingSyncJobs,
   getSyncDataSources,
   getSyncLogs,
+  getSyncSchedule,
   rejectPendingSyncJob,
   updateSyncDataSourceStatus,
 } from "../../services/adminService";
@@ -119,6 +120,9 @@ function AdminApiConfigPage() {
   const [dataSourcesLoading, setDataSourcesLoading] = useState(true);
   const [dataSourcesError, setDataSourcesError] = useState("");
   const [pendingSourceId, setPendingSourceId] = useState(null);
+  const [syncSchedule, setSyncSchedule] = useState(null);
+  const [syncScheduleLoading, setSyncScheduleLoading] = useState(true);
+  const [syncScheduleError, setSyncScheduleError] = useState("");
   const [pendingJobs, setPendingJobs] = useState([]);
   const [pendingLimit, setPendingLimit] = useState(50);
   const [pendingLoading, setPendingLoading] = useState(true);
@@ -193,6 +197,24 @@ function AdminApiConfigPage() {
         if (active) setDataSourcesLoading(false);
       });
 
+    getSyncSchedule()
+      .then((result) => {
+        if (!active) return;
+        setSyncSchedule(result || null);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setSyncSchedule(null);
+        setSyncScheduleError(
+          error.response?.data?.message ||
+            error.message ||
+            "Could not load sync schedule.",
+        );
+      })
+      .finally(() => {
+        if (active) setSyncScheduleLoading(false);
+      });
+
     getPendingSyncJobs(50)
       .then((result) => {
         if (!active) return;
@@ -258,6 +280,25 @@ function AdminApiConfigPage() {
       );
     } finally {
       setPendingLoading(false);
+    }
+  };
+
+  const refreshSyncSchedule = async () => {
+    setSyncScheduleLoading(true);
+    setSyncScheduleError("");
+
+    try {
+      const result = await getSyncSchedule();
+      setSyncSchedule(result || null);
+    } catch (error) {
+      setSyncSchedule(null);
+      setSyncScheduleError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not load sync schedule.",
+      );
+    } finally {
+      setSyncScheduleLoading(false);
     }
   };
 
@@ -481,6 +522,9 @@ function AdminApiConfigPage() {
   };
 
   const reviewBusy = approveLoading || rejectLoading;
+  const scheduleQueries = Array.isArray(syncSchedule?.searchQueries)
+    ? syncSchedule.searchQueries
+    : [];
 
   return (
     <section className={styles.configPage}>
@@ -520,6 +564,88 @@ function AdminApiConfigPage() {
           <code>{baseUrl}</code>
         </div>
         <p className={styles.connectionMessage}>{message}</p>
+      </article>
+
+      <article className={styles.routesPanel}>
+        <div className={styles.syncPanelHeader}>
+          <div>
+            <span className={styles.kicker}>Synchronization</span>
+            <h3>Sync schedule</h3>
+          </div>
+          <button
+            type="button"
+            className={styles.syncRefreshButton}
+            onClick={refreshSyncSchedule}
+            disabled={syncScheduleLoading}
+          >
+            <Icon name="refresh" size={15} />
+            {syncScheduleLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+
+        {syncScheduleError && (
+          <div className={styles.syncError} role="alert">
+            {syncScheduleError}
+          </div>
+        )}
+
+        {syncScheduleLoading ? (
+          <div className={styles.scheduleGrid}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <div className={styles.syncSkeleton} key={index}>
+                <span />
+                <span />
+              </div>
+            ))}
+          </div>
+        ) : syncSchedule ? (
+          <>
+            <div className={styles.scheduleGrid}>
+              <div className={styles.scheduleItem}>
+                <span>Status</span>
+                <strong
+                  className={syncSchedule.enabled ? styles.scheduleEnabled : styles.scheduleDisabled}
+                >
+                  {syncSchedule.enabled ? "Enabled" : "Disabled"}
+                </strong>
+              </div>
+              <div className={styles.scheduleItem}>
+                <span>Cron</span>
+                <strong>{syncSchedule.cronExpression || "Not configured"}</strong>
+              </div>
+              <div className={styles.scheduleItem}>
+                <span>Time zone</span>
+                <strong>{syncSchedule.timeZone || "Not configured"}</strong>
+              </div>
+              <div className={styles.scheduleItem}>
+                <span>Last sync</span>
+                <strong>{formatDate(syncSchedule.lastSyncAt)}</strong>
+              </div>
+              <div className={styles.scheduleItem}>
+                <span>Next sync</span>
+                <strong>{formatDate(syncSchedule.nextSyncAt)}</strong>
+              </div>
+            </div>
+
+            <div className={styles.queryList}>
+              <span className={styles.kicker}>Search queries</span>
+              <div className={styles.queryPills}>
+                {scheduleQueries.length > 0 ? (
+                  scheduleQueries.map((query) => (
+                    <span key={query}>{query}</span>
+                  ))
+                ) : (
+                  <span>No search queries configured</span>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className={styles.syncEmpty}>
+            <Icon name="clock" size={20} />
+            <p>No sync schedule configured.</p>
+          </div>
+        )}
       </article>
 
       <article className={styles.routesPanel}>
@@ -672,6 +798,7 @@ function AdminApiConfigPage() {
           <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/status</code><small>Activate or deactivate</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/data-sources</code><small>Sync data sources</small></div>
           <div><span className={styles.methodPatch}>PATCH</span><code>/admin/sync/data-sources/:id</code><small>Update source status</small></div>
+          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/schedule</code><small>Sync schedule</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/logs</code><small>Sync history</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending</code><small>Pending sync jobs</small></div>
           <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending/:id</code><small>Sync job detail</small></div>
