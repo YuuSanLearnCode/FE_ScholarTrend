@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import {
   approvePendingSyncPapers,
-  getAdminStats,
   getPendingSyncJobById,
   getPendingSyncJobs,
-  getSyncDataSources,
   getSyncLogs,
   getSyncSchedule,
   getSyncScheduleHistory,
@@ -12,39 +10,17 @@ import {
   getSyncStatusBySource,
   rejectPendingSyncJob,
   triggerAdminSync,
-  updateSyncDataSourceStatus,
   updateSyncSchedule,
 } from "../../services/adminService";
 import styles from "./AdminApiConfigPage.module.css";
 
-const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5141/api";
-
 function Icon({ name, size = 19 }) {
   const paths = {
-    server: (
-      <>
-        <rect x="3" y="4" width="18" height="6" rx="2" />
-        <rect x="3" y="14" width="18" height="6" rx="2" />
-        <path d="M7 7h.01M7 17h.01" />
-      </>
-    ),
-    shield: (
-      <>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-        <path d="m9 12 2 2 4-4" />
-      </>
-    ),
     refresh: (
       <>
         <path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 4v5h5M4 13a8.1 8.1 0 0 0 15.5 2M20 20v-5h-5" />
       </>
     ),
-    code: (
-      <>
-        <path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14" />
-      </>
-    ),
-    check: <path d="m5 12 4 4L19 6" />,
     clock: (
       <>
         <circle cx="12" cy="12" r="9" />
@@ -78,11 +54,6 @@ function normalizePendingSyncJobs(result) {
 function normalizeSyncLogs(result) {
   const logs = result?.items || result?.logs || result?.data || result;
   return Array.isArray(logs) ? logs : [];
-}
-
-function normalizeDataSources(result) {
-  const sources = result?.items || result?.sources || result?.data || result;
-  return Array.isArray(sources) ? sources : [];
 }
 
 function normalizeScheduleHistory(result) {
@@ -150,12 +121,6 @@ function parseScheduleQueries(value) {
 }
 
 function AdminApiConfigPage() {
-  const [connection, setConnection] = useState("checking");
-  const [message, setMessage] = useState("Checking the admin API...");
-  const [dataSources, setDataSources] = useState([]);
-  const [dataSourcesLoading, setDataSourcesLoading] = useState(true);
-  const [dataSourcesError, setDataSourcesError] = useState("");
-  const [pendingSourceId, setPendingSourceId] = useState(null);
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncStatusLoading, setSyncStatusLoading] = useState(true);
   const [syncStatusError, setSyncStatusError] = useState("");
@@ -198,62 +163,8 @@ function AdminApiConfigPage() {
   const [approveError, setApproveError] = useState("");
   const [approveNotice, setApproveNotice] = useState("");
 
-  const testConnection = async () => {
-    setConnection("checking");
-    setMessage("Checking the admin API...");
-
-    const startedAt = performance.now();
-    try {
-      await getAdminStats();
-      const duration = Math.max(1, Math.round(performance.now() - startedAt));
-      setConnection("connected");
-      setMessage(`Connected successfully in ${duration} ms.`);
-    } catch (error) {
-      setConnection("disconnected");
-      setMessage(
-        error.response?.data?.message ||
-          "The frontend could not reach the admin API. Verify the backend and token.",
-      );
-    }
-  };
-
   useEffect(() => {
     let active = true;
-    const startedAt = performance.now();
-
-    getAdminStats()
-      .then(() => {
-        if (!active) return;
-        const duration = Math.max(1, Math.round(performance.now() - startedAt));
-        setConnection("connected");
-        setMessage(`Connected successfully in ${duration} ms.`);
-      })
-      .catch((error) => {
-        if (!active) return;
-        setConnection("disconnected");
-        setMessage(
-          error.response?.data?.message ||
-          "The frontend could not reach the admin API. Verify the backend and token.",
-        );
-      });
-
-    getSyncDataSources()
-      .then((result) => {
-        if (!active) return;
-        setDataSources(normalizeDataSources(result));
-      })
-      .catch((error) => {
-        if (!active) return;
-        setDataSources([]);
-        setDataSourcesError(
-          error.response?.data?.message ||
-            error.message ||
-            "Could not load sync data sources.",
-        );
-      })
-      .finally(() => {
-        if (active) setDataSourcesLoading(false);
-      });
 
     getSyncSchedule()
       .then((result) => {
@@ -559,63 +470,6 @@ function AdminApiConfigPage() {
     }
   };
 
-  const refreshDataSources = async () => {
-    setDataSourcesLoading(true);
-    setDataSourcesError("");
-
-    try {
-      const result = await getSyncDataSources();
-      setDataSources(normalizeDataSources(result));
-    } catch (error) {
-      setDataSources([]);
-      setDataSourcesError(
-        error.response?.data?.message ||
-          error.message ||
-          "Could not load sync data sources.",
-      );
-    } finally {
-      setDataSourcesLoading(false);
-    }
-  };
-
-  const handleToggleDataSource = async (source) => {
-    if (!source?.id) return;
-
-    const nextActive = !source.isActive;
-    if (!nextActive) {
-      const confirmed = window.confirm(
-        `Deactivate ${source.name || "this data source"}? New sync jobs may stop using it.`,
-      );
-      if (!confirmed) return;
-    }
-
-    setPendingSourceId(source.id);
-    setDataSourcesError("");
-
-    try {
-      const result = await updateSyncDataSourceStatus(source.id, nextActive);
-      const updatedSource = {
-        ...source,
-        ...(result || {}),
-        isActive: result?.isActive ?? nextActive,
-      };
-
-      setDataSources((current) =>
-        current.map((item) =>
-          String(item.id) === String(source.id) ? { ...item, ...updatedSource } : item,
-        ),
-      );
-    } catch (error) {
-      setDataSourcesError(
-        error.response?.data?.message ||
-          error.message ||
-          "Could not update this data source.",
-      );
-    } finally {
-      setPendingSourceId(null);
-    }
-  };
-
   const refreshSyncLogs = async () => {
     const limit = Math.max(1, Number(syncLogLimit) || 50);
     setSyncLogsLoading(true);
@@ -792,10 +646,7 @@ function AdminApiConfigPage() {
     : [];
   const sourceNameOptions = Array.from(
     new Set(
-      [
-        ...lockedSources.map((source) => source?.sourceName),
-        ...dataSources.map((source) => source?.name),
-      ].filter(Boolean),
+      lockedSources.map((source) => source?.sourceName).filter(Boolean),
     ),
   );
 
@@ -806,38 +657,10 @@ function AdminApiConfigPage() {
           <span className={styles.kicker}>Infrastructure</span>
           <h2 className={styles.pageTitle}>API & integrations</h2>
           <p className={styles.pageSubtitle}>
-            Inspect the frontend connection and confirm the services used by the admin console.
+            Manage sync schedules, manual triggers, live status, logs, and pending paper reviews.
           </p>
         </div>
-        <button
-          type="button"
-          className={styles.testButton}
-          onClick={testConnection}
-          disabled={connection === "checking"}
-        >
-          <Icon name="refresh" size={17} />
-          {connection === "checking" ? "Testing..." : "Test connection"}
-        </button>
       </div>
-
-      <article className={styles.connectionCard}>
-        <div className={styles.connectionHeader}>
-          <div className={styles.serverIcon}><Icon name="server" size={22} /></div>
-          <div>
-            <span>Primary service</span>
-            <h3>ScholarTrend API</h3>
-          </div>
-          <div className={`${styles.connectionBadge} ${styles[connection]}`}>
-            <i />
-            {connection === "checking" ? "Checking" : connection}
-          </div>
-        </div>
-        <div className={styles.endpointBlock}>
-          <span>Base URL</span>
-          <code>{baseUrl}</code>
-        </div>
-        <p className={styles.connectionMessage}>{message}</p>
-      </article>
 
       <article className={styles.routesPanel}>
         <div className={styles.syncPanelHeader}>
@@ -1361,170 +1184,6 @@ function AdminApiConfigPage() {
             <p>No sync status available.</p>
           </div>
         )}
-      </article>
-
-      <article className={styles.routesPanel}>
-        <div className={styles.syncPanelHeader}>
-          <div>
-            <span className={styles.kicker}>Synchronization</span>
-            <h3>Data sources</h3>
-          </div>
-          <button
-            type="button"
-            className={styles.syncRefreshButton}
-            onClick={refreshDataSources}
-            disabled={dataSourcesLoading}
-          >
-            <Icon name="refresh" size={15} />
-            {dataSourcesLoading ? "Loading..." : "Refresh"}
-          </button>
-        </div>
-
-        {dataSourcesError && (
-          <div className={styles.syncError} role="alert">
-            {dataSourcesError}
-          </div>
-        )}
-
-        <div className={styles.dataSourceGrid}>
-          {dataSourcesLoading ? (
-            Array.from({ length: 3 }, (_, index) => (
-              <div className={styles.syncSkeleton} key={index}>
-                <span />
-                <span />
-              </div>
-            ))
-          ) : dataSources.length > 0 ? (
-            dataSources.map((source) => (
-              <article className={styles.dataSourceCard} key={source.id || source.name}>
-                <div className={styles.dataSourceTop}>
-                  <div>
-                    <strong>{source.name || "Unknown source"}</strong>
-                    <code>{source.baseUrl || "No base URL"}</code>
-                  </div>
-                  <em className={source.isActive ? styles.sourceActive : styles.sourceInactive}>
-                    {source.isActive ? "Active" : "Inactive"}
-                  </em>
-                </div>
-                <span>Last sync: {formatDate(source.lastSyncAt)}</span>
-                <button
-                  type="button"
-                  className={
-                    source.isActive ? styles.sourceDeactivateButton : styles.sourceActivateButton
-                  }
-                  onClick={() => handleToggleDataSource(source)}
-                  disabled={pendingSourceId === source.id}
-                >
-                  {pendingSourceId === source.id
-                    ? "Saving..."
-                    : source.isActive
-                      ? "Deactivate"
-                      : "Activate"}
-                </button>
-              </article>
-            ))
-          ) : (
-            <div className={styles.syncEmpty}>
-              <Icon name="server" size={20} />
-              <p>No data sources configured.</p>
-            </div>
-          )}
-        </div>
-      </article>
-
-      <div className={styles.contentGrid}>
-        <article className={styles.panel}>
-          <div className={styles.panelTitle}>
-            <div className={styles.smallIcon}><Icon name="code" /></div>
-            <div>
-              <span>Runtime configuration</span>
-              <h3>Frontend environment</h3>
-            </div>
-          </div>
-
-          <dl className={styles.detailList}>
-            <div>
-              <dt>Environment variable</dt>
-              <dd><code>VITE_API_BASE_URL</code></dd>
-            </div>
-            <div>
-              <dt>Authentication</dt>
-              <dd>JWT bearer token</dd>
-            </div>
-            <div>
-              <dt>Unauthorized response</dt>
-              <dd>Redirect to login</dd>
-            </div>
-            <div>
-              <dt>Sync schedule</dt>
-              <dd>Managed by backend</dd>
-            </div>
-          </dl>
-
-          <div className={styles.infoBox}>
-            <strong>Deployment note</strong>
-            <p>
-              The API URL is injected when Vite builds the frontend. Change it in the environment
-              file, then rebuild the application.
-            </p>
-          </div>
-        </article>
-
-        <article className={styles.panel}>
-          <div className={styles.panelTitle}>
-            <div className={styles.smallIcon}><Icon name="shield" /></div>
-            <div>
-              <span>Security</span>
-              <h3>Connection checklist</h3>
-            </div>
-          </div>
-
-          <div className={styles.checkList}>
-            <div>
-              <span className={styles.checkIcon}><Icon name="check" size={14} /></span>
-              <p><strong>Token interceptor</strong><small>JWT is attached to protected requests.</small></p>
-            </div>
-            <div>
-              <span className={styles.checkIcon}><Icon name="check" size={14} /></span>
-              <p><strong>Role-protected routes</strong><small>Admin screens require the Admin role.</small></p>
-            </div>
-            <div>
-              <span className={styles.checkIcon}><Icon name="check" size={14} /></span>
-              <p><strong>No client-side API keys</strong><small>Secrets remain on the backend.</small></p>
-            </div>
-            <div>
-              <span className={styles.checkIcon}><Icon name="clock" size={14} /></span>
-              <p><strong>Metadata sync</strong><small>Timing and jobs are controlled by the API.</small></p>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <article className={styles.routesPanel}>
-        <div>
-          <span className={styles.kicker}>Admin contract</span>
-          <h3>Connected endpoints</h3>
-        </div>
-        <div className={styles.routeGrid}>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/dashboard</code><small>Dashboard metrics</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/users</code><small>User directory</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/users/:id</code><small>User detail</small></div>
-          <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/role</code><small>Role update</small></div>
-          <div><span className={styles.methodPatch}>PATCH</span><code>/admin/users/:id/status</code><small>Activate or deactivate</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/data-sources</code><small>Sync data sources</small></div>
-          <div><span className={styles.methodPatch}>PATCH</span><code>/admin/sync/data-sources/:id</code><small>Update source status</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/schedule</code><small>Sync schedule</small></div>
-          <div><span className={styles.methodPut}>PUT</span><code>/admin/sync/schedule</code><small>Update sync schedule</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/schedule/history</code><small>Schedule job history</small></div>
-          <div><span className={styles.methodPost}>POST</span><code>/admin/sync/trigger</code><small>Manual sync trigger</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/status</code><small>Live sync status</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/status/:sourceName</code><small>Source sync status</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/logs</code><small>Sync history</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending</code><small>Pending sync jobs</small></div>
-          <div><span className={styles.methodGet}>GET</span><code>/admin/sync/pending/:id</code><small>Sync job detail</small></div>
-          <div><span className={styles.methodPost}>POST</span><code>/admin/sync/pending/:id/approve</code><small>Approve pending papers</small></div>
-          <div><span className={styles.methodPost}>POST</span><code>/admin/sync/pending/:id/reject</code><small>Reject pending sync</small></div>
-        </div>
       </article>
 
       <article className={styles.routesPanel}>

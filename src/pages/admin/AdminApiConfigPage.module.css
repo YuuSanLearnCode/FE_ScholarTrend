@@ -34,162 +34,6 @@
   font-size: 13px;
 }
 
-.testButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 15px;
-  color: #fff;
-  background: #2d6558;
-  border: 1px solid #2d6558;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(30, 79, 66, 0.12);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.testButton:hover:not(:disabled) {
-  background: #245549;
-  border-color: #245549;
-}
-
-.testButton:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.connectionCard {
-  margin-bottom: 16px;
-  padding: 22px;
-  background: #fff;
-  border: 1px solid #e5e7e4;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(31, 45, 40, 0.025);
-}
-
-.connectionHeader {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.serverIcon {
-  width: 42px;
-  height: 42px;
-  display: grid;
-  place-items: center;
-  color: #426f63;
-  background: #e7f0ed;
-  border-radius: 11px;
-}
-
-.connectionHeader > div:nth-child(2) {
-  flex: 1;
-}
-
-.connectionHeader span {
-  color: #939a96;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.connectionHeader h3 {
-  margin: 2px 0 0;
-  color: #26312d;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.connectionBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 9px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-weight: 700;
-  text-transform: capitalize;
-}
-
-.connectionBadge i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.checking {
-  color: #856b3e;
-  background: #f7f0e2;
-}
-
-.checking i {
-  background: #a58448;
-  animation: pulse 1s infinite;
-}
-
-.connected {
-  color: #337061;
-  background: #eaf4f0;
-}
-
-.connected i {
-  background: #3c8976;
-}
-
-.disconnected {
-  color: #9c554a;
-  background: #faece8;
-}
-
-.disconnected i {
-  background: #c96a5a;
-}
-
-.endpointBlock {
-  display: grid;
-  grid-template-columns: 90px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-  margin-top: 18px;
-  padding: 12px 14px;
-  background: #f8f9f7;
-  border: 1px solid #ebeeeb;
-  border-radius: 10px;
-}
-
-.endpointBlock span {
-  color: #8d9490;
-  font-size: 10px;
-  font-weight: 650;
-}
-
-.endpointBlock code {
-  overflow: hidden;
-  color: #31594f;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.connectionMessage {
-  margin: 10px 2px 0;
-  color: #7f8783;
-  font-size: 10px;
-}
-
-.contentGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.panel,
 .routesPanel {
   padding: 22px;
   background: #fff;
@@ -198,212 +42,11 @@
   box-shadow: 0 2px 8px rgba(31, 45, 40, 0.025);
 }
 
-.panelTitle {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-bottom: 18px;
-}
-
-.smallIcon {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  color: #5f756e;
-  background: #f0f3f1;
-  border-radius: 10px;
-}
-
-.panelTitle span {
-  display: block;
-  color: #969c99;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.panelTitle h3,
 .routesPanel h3 {
   margin: 2px 0 0;
   color: #29332f;
   font-size: 14px;
   font-weight: 700;
-}
-
-.detailList {
-  margin: 0;
-}
-
-.detailList > div {
-  display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr);
-  gap: 12px;
-  padding: 11px 0;
-  border-bottom: 1px solid #f0f1ef;
-}
-
-.detailList > div:last-child {
-  border-bottom: 0;
-}
-
-.detailList dt,
-.detailList dd {
-  margin: 0;
-  font-size: 10px;
-}
-
-.detailList dt {
-  color: #8d9490;
-}
-
-.detailList dd {
-  color: #3f4b46;
-  font-weight: 600;
-  text-align: right;
-}
-
-.detailList code,
-.routeGrid code {
-  color: #31594f;
-  font-family: "SFMono-Regular", Consolas, monospace;
-}
-
-.infoBox {
-  margin-top: 15px;
-  padding: 13px 14px;
-  color: #745f3b;
-  background: #faf6eb;
-  border: 1px solid #eee3c9;
-  border-radius: 9px;
-}
-
-.infoBox strong {
-  font-size: 10px;
-}
-
-.infoBox p {
-  margin: 3px 0 0;
-  color: #8d7954;
-  font-size: 9px;
-  line-height: 1.6;
-}
-
-.checkList {
-  display: grid;
-  gap: 6px;
-}
-
-.checkList > div {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 9px 0;
-  border-bottom: 1px solid #f0f1ef;
-}
-
-.checkList > div:last-child {
-  border-bottom: 0;
-}
-
-.checkIcon {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  color: #427266;
-  background: #eaf3ef;
-  border-radius: 7px;
-}
-
-.checkList p {
-  margin: 0;
-}
-
-.checkList strong,
-.checkList small {
-  display: block;
-}
-
-.checkList strong {
-  color: #3b4742;
-  font-size: 10px;
-}
-
-.checkList small {
-  margin-top: 2px;
-  color: #969c99;
-  font-size: 9px;
-}
-
-.routesPanel > div:first-child {
-  margin-bottom: 16px;
-}
-
-.routeGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.routeGrid > div {
-  display: grid;
-  grid-template-columns: 52px minmax(0, 1fr);
-  align-items: center;
-  gap: 7px;
-  min-height: 54px;
-  padding: 10px 12px;
-  background: #fafbf9;
-  border: 1px solid #eceeeb;
-  border-radius: 9px;
-}
-
-.routeGrid > div > span {
-  padding: 4px 5px;
-  border-radius: 5px;
-  font-size: 8px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.methodGet {
-  color: #376b5e;
-  background: #e8f2ee;
-}
-
-.methodPost {
-  color: #2e6a5e;
-  background: #def4ed;
-}
-
-.methodPut {
-  color: #7d663e;
-  background: #f5efdf;
-}
-
-.methodPatch {
-  color: #2e6a5e;
-  background: #ddf3ed;
-}
-
-.methodDelete {
-  color: #98574d;
-  background: #f8ebe8;
-}
-
-.routeGrid code {
-  overflow: hidden;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.routeGrid small {
-  grid-column: 2;
-  color: #9aa09d;
-  font-size: 8px;
 }
 
 .scheduleGrid {
@@ -1103,58 +746,6 @@
   text-align: center;
 }
 
-.dataSourceGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.dataSourceCard {
-  padding: 13px;
-  background: #fbfcfa;
-  border: 1px solid #eceeeb;
-  border-radius: 11px;
-}
-
-.dataSourceTop {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.dataSourceTop strong,
-.dataSourceTop code,
-.dataSourceCard > span {
-  display: block;
-}
-
-.dataSourceTop strong {
-  color: #26322e;
-  font-size: 12px;
-}
-
-.dataSourceTop code {
-  max-width: 220px;
-  margin-top: 3px;
-  overflow: hidden;
-  color: #698179;
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dataSourceTop em {
-  flex: 0 0 auto;
-  padding: 5px 8px;
-  border-radius: 999px;
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 750;
-}
-
 .sourceActive {
   color: #337061;
   background: #eaf4f0;
@@ -1163,51 +754,6 @@
 .sourceInactive {
   color: #9c554a;
   background: #faece8;
-}
-
-.dataSourceCard > span {
-  color: #8f9692;
-  font-size: 9px;
-}
-
-.sourceActivateButton,
-.sourceDeactivateButton {
-  width: 100%;
-  min-height: 32px;
-  margin-top: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 9px;
-  font-weight: 750;
-}
-
-.sourceActivateButton {
-  color: #315f55;
-  background: #edf5f2;
-  border: 1px solid #d3e4df;
-}
-
-.sourceActivateButton:hover:not(:disabled) {
-  background: #e3f0eb;
-  border-color: #bdd8cf;
-}
-
-.sourceDeactivateButton {
-  color: #9b594f;
-  background: #fff5f2;
-  border: 1px solid #efd9d3;
-}
-
-.sourceDeactivateButton:hover:not(:disabled) {
-  color: #8b493f;
-  background: #faece8;
-  border-color: #e7c6bd;
-}
-
-.sourceActivateButton:disabled,
-.sourceDeactivateButton:disabled {
-  cursor: wait;
-  opacity: 0.6;
 }
 
 .syncPanelHeader {
@@ -1786,15 +1332,12 @@
 }
 
 @media (max-width: 800px) {
-  .contentGrid,
-  .dataSourceGrid,
   .scheduleFormGrid,
   .scheduleGrid,
   .sourceStatusForm,
   .statusSectionGrid,
   .statusSummary,
-  .triggerForm,
-  .routeGrid {
+  .triggerForm {
     grid-template-columns: 1fr;
   }
 }
@@ -1805,24 +1348,8 @@
     flex-direction: column;
   }
 
-  .connectionCard,
-  .panel,
   .routesPanel {
     padding: 18px;
-  }
-
-  .connectionHeader {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .connectionBadge {
-    margin-left: 54px;
-  }
-
-  .endpointBlock {
-    grid-template-columns: 1fr;
-    gap: 4px;
   }
 
   .syncPanelHeader,
@@ -1845,7 +1372,6 @@
   }
 
   .syncJobTop,
-  .dataSourceTop,
   .lockTop,
   .syncDetailHeader,
   .triggerResultTop,
