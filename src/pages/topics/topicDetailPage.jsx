@@ -16,7 +16,7 @@ import {
   getFollowedTopics,
   unfollowTopic,
 } from '../../services/followService'
-import { getTopicById } from '../../services/topicService'
+import { getTopicById, getTopicInsightsDashboard } from '../../services/topicService'
 import styles from './topicDetailPage.module.css'
 
 function formatPeriod(point) {
@@ -28,11 +28,24 @@ function formatNumber(value) {
   return new Intl.NumberFormat('en').format(value ?? 0)
 }
 
+function formatDateTime(value) {
+  if (!value) return 'Not analyzed yet'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Not analyzed yet'
+
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(date)
+}
+
 function TopicDetailPage() {
   const { topicId } = useParams()
   const [topic, setTopic] = useState(null)
+  const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [insightsError, setInsightsError] = useState('')
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [followError, setFollowError] = useState('')
@@ -41,12 +54,34 @@ function TopicDetailPage() {
     async function fetchTopic() {
       setLoading(true)
       setError('')
+      setInsights(null)
+      setInsightsError('')
       setFollowError('')
       setIsFollowing(false)
       try {
         const hasToken = Boolean(localStorage.getItem('token'))
-        const topicResult = await getTopicById(topicId)
+        const [topicResponse, insightsResponse] = await Promise.allSettled([
+          getTopicById(topicId),
+          getTopicInsightsDashboard(topicId),
+        ])
+
+        if (topicResponse.status === 'rejected') {
+          throw topicResponse.reason
+        }
+
+        const topicResult = topicResponse.value
         setTopic(topicResult)
+
+        if (insightsResponse.status === 'fulfilled') {
+          setInsights(insightsResponse.value)
+        } else {
+          setInsights(null)
+          setInsightsError(
+            insightsResponse.reason?.response?.data?.message ||
+              insightsResponse.reason?.message ||
+              'Could not load topic insights.',
+          )
+        }
 
         if (hasToken) {
           try {
@@ -65,6 +100,7 @@ function TopicDetailPage() {
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load topic details.')
         setTopic(null)
+        setInsights(null)
       } finally {
         setLoading(false)
       }
@@ -129,6 +165,10 @@ function TopicDetailPage() {
     ? trendData.reduce((sum, point) => sum + (point.growthRate ?? 0), 0) / trendData.length
     : 0
   const peakScore = Math.max(0, ...trendData.map((point) => point.trendingScore ?? 0))
+  const insightTimeline = insights?.timeline ?? []
+  const insightOpportunities = insights?.opportunities ?? []
+  const topMethods = insights?.topMethods ?? []
+  const topDatasets = insights?.topDatasets ?? []
 
   return (
     <section className={styles.page}>
@@ -182,6 +222,101 @@ function TopicDetailPage() {
           <strong>{peakScore.toFixed(2)}</strong>
         </article>
       </div>
+
+      <article className={`${styles.panel} ${styles.insightsPanel}`}>
+        <div className={styles.panelHeader}>
+          <div>
+            <span className={styles.eyebrow}>AI topic insights</span>
+            <h2>Research intelligence dashboard</h2>
+          </div>
+          <span className={styles.analyzedAt}>
+            Last analyzed: {formatDateTime(insights?.lastAnalyzedAt)}
+          </span>
+        </div>
+
+        {insightsError && <p className={styles.insightsError}>{insightsError}</p>}
+
+        {insights ? (
+          <>
+            <div className={styles.insightTagsGrid}>
+              <section>
+                <h3>Top methods</h3>
+                <div className={styles.insightTags}>
+                  {topMethods.length > 0 ? (
+                    topMethods.map((method) => <span key={method}>{method}</span>)
+                  ) : (
+                    <span>No methods found</span>
+                  )}
+                </div>
+              </section>
+              <section>
+                <h3>Top datasets</h3>
+                <div className={styles.insightTags}>
+                  {topDatasets.length > 0 ? (
+                    topDatasets.map((dataset) => <span key={dataset}>{dataset}</span>)
+                  ) : (
+                    <span>No datasets found</span>
+                  )}
+                </div>
+              </section>
+            </div>
+
+            <div className={styles.insightsGrid}>
+              <section className={styles.timelineBlock}>
+                <h3>Timeline</h3>
+                {insightTimeline.length > 0 ? (
+                  <ol className={styles.timelineList}>
+                    {insightTimeline.map((item) => (
+                      <li key={`${item.year}-${item.achievement}`}>
+                        <div>
+                          <strong>{item.year || 'N/A'}</strong>
+                          <span>{formatNumber(item.paperCount)} papers</span>
+                        </div>
+                        <section>
+                          <h4>{item.achievement || 'Research milestone'}</h4>
+                          <p>{item.summary || 'No summary available.'}</p>
+                        </section>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className={styles.emptyInline}>No timeline data available.</p>
+                )}
+              </section>
+
+              <section className={styles.opportunityBlock}>
+                <h3>Opportunities</h3>
+                {insightOpportunities.length > 0 ? (
+                  <div className={styles.opportunityList}>
+                    {insightOpportunities.map((opportunity) => (
+                      <article key={opportunity.title || opportunity.description}>
+                        <h4>{opportunity.title || 'Research opportunity'}</h4>
+                        <p>{opportunity.description || 'No description available.'}</p>
+                        {Array.isArray(opportunity.evidences) && opportunity.evidences.length > 0 && (
+                          <div className={styles.evidenceList}>
+                            {opportunity.evidences.map((evidence) => (
+                              <Link
+                                key={`${evidence.paperId}-${evidence.excerpt}`}
+                                to={`/papers/${evidence.paperId}`}
+                              >
+                                Paper #{evidence.paperId}: {evidence.excerpt || 'View evidence'}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.emptyInline}>No opportunities available.</p>
+                )}
+              </section>
+            </div>
+          </>
+        ) : (
+          <p className={styles.emptyInline}>No insights dashboard is available for this topic.</p>
+        )}
+      </article>
 
       <article className={styles.panel}>
         <div className={styles.panelHeader}>

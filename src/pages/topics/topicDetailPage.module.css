@@ -142,6 +142,185 @@
   font-size: 1.05rem;
 }
 
+.analyzedAt {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  text-align: right;
+}
+
+.insightsPanel {
+  background:
+    radial-gradient(circle at top left, rgba(30, 64, 175, 0.08), transparent 30%),
+    var(--color-surface);
+}
+
+.insightsError {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.76rem;
+}
+
+.insightTagsGrid,
+.insightsGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.insightTagsGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.insightsGrid {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.25fr);
+}
+
+.insightTagsGrid section,
+.timelineBlock,
+.opportunityBlock {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.insightTagsGrid h3,
+.timelineBlock h3,
+.opportunityBlock h3 {
+  margin: 0 0 0.8rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.insightTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.insightTags span {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.38rem 0.58rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timelineList {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineList li {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 0.8rem;
+}
+
+.timelineList li > div {
+  padding: 0.65rem;
+  border-radius: 11px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.timelineList strong,
+.timelineList span {
+  display: block;
+}
+
+.timelineList strong {
+  color: var(--color-brand);
+  font-size: 1.05rem;
+}
+
+.timelineList span {
+  margin-top: 0.2rem;
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.timelineList section {
+  min-width: 0;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.timelineList li:last-child section {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.timelineList h4,
+.opportunityList h4 {
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+  font-size: 0.84rem;
+}
+
+.timelineList p,
+.opportunityList p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.opportunityList {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.opportunityList article {
+  padding: 0.85rem;
+  border: 1px solid #e0f2fe;
+  border-radius: 12px;
+  background: #f8fdff;
+}
+
+.evidenceList {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+}
+
+.evidenceList a {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--color-brand);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.emptyInline {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 11px;
+  color: var(--color-text-muted);
+  font-size: 0.76rem;
+  text-align: center;
+}
+
 .chart {
   height: 360px;
   padding: 1rem 0.5rem 0.5rem 0;
@@ -186,8 +365,14 @@
 }
 
 @media (max-width: 800px) {
+  .insightTagsGrid,
+  .insightsGrid,
   .statsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .insightsGrid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -210,6 +395,15 @@
 
   .statsGrid {
     grid-template-columns: 1fr;
+  }
+
+  .insightTagsGrid,
+  .timelineList li {
+    grid-template-columns: 1fr;
+  }
+
+  .analyzedAt {
+    text-align: left;
   }
 
   .chart {
