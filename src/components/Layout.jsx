@@ -25,6 +25,7 @@ function Layout() {
     avatarStorageKey ? localStorage.getItem(avatarStorageKey) || "" : "",
   );
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isAuthenticated = Boolean(token);
   const navItems = getNavItems(isAuthenticated ? userRole : null);
@@ -161,30 +162,38 @@ function Layout() {
                     </span>
                   )}
                 </NavLink>
-                <div className={styles.userGreeting}>
-                  <span className={styles.userAvatar}>
-                    {userAvatar ? (
-                      <img src={userAvatar} alt="" />
-                    ) : (
-                      userName ? userName.charAt(0).toUpperCase() : "U"
-                    )}
-                  </span>
-                  <div className={styles.userInfo}>
-                    <span className={styles.userName}>{userName}</span>
-                    {userRole && (
-                      <span className={styles.userRole}>
-                        {getRoleLabel(userRole)}
-                      </span>
-                    )}
-                  </div>
+                <div className={styles.userMenu}>
+                  <button
+                    type="button"
+                    className={styles.avatarBtn}
+                    onClick={() => setMenuOpen((prev) => !prev)}
+                    aria-haspopup="true"
+                    aria-expanded={menuOpen}
+                  >
+                    <span className={styles.userAvatar}>
+                      {userAvatar ? (
+                        <img src={userAvatar} alt="" />
+                      ) : (
+                        userName ? userName.charAt(0).toUpperCase() : "U"
+                      )}
+                    </span>
+                    <svg className={styles.chevron} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  {menuOpen && (
+                    <>
+                      <div className={styles.backdrop} onClick={() => setMenuOpen(false)} />
+                      <div className={styles.dropdown}>
+                        <div className={styles.dropdownHeader}>
+                          <span className={styles.dropdownName}>{userName}</span>
+                          {userRole && <span className={styles.dropdownRole}>{getRoleLabel(userRole)}</span>}
+                        </div>
+                        <div className={styles.dropdownDivider} />
+                        <NavLink to="/profile" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Profile</NavLink>
+                        <button type="button" className={styles.dropdownItem} onClick={handleLogout}>Logout</button>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  className={styles.logoutBtn}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
               </>
             ) : (
               <>
