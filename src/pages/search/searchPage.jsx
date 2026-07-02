@@ -59,12 +59,6 @@ function SearchPage() {
     event.preventDefault()
     setError('')
 
-    const minC = form.minCitations ? Number(form.minCitations) : null
-    if (minC !== null && (isNaN(minC) || minC < 0)) {
-      setError('Minimum citations must be a non-negative number.')
-      return
-    }
-
     const yearFrom = form.yearFrom ? Number(form.yearFrom) : null
     const yearTo = form.yearTo ? Number(form.yearTo) : null
 
@@ -74,7 +68,7 @@ function SearchPage() {
     }
 
     const params = new URLSearchParams()
-    if (form.query?.trim()) params.set('query', form.query.trim())
+    if (form.query.trim()) params.set('query', form.query.trim())
     if (form.searchType !== 'All') params.set('searchType', form.searchType)
     if (form.yearFrom) params.set('yearFrom', form.yearFrom)
     if (form.yearTo) params.set('yearTo', form.yearTo)
@@ -119,7 +113,6 @@ function SearchPage() {
                 placeholder="Try machine learning, cloud computing, or an author name"
                 value={form.query}
                 onChange={handleChange('query')}
-                maxLength={500}
                 autoFocus
               />
               <select

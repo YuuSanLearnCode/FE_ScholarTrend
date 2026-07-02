@@ -450,17 +450,6 @@
   cursor: not-allowed;
 }
 
-.fieldError {
-  color: var(--color-danger);
-  font-size: 0.72rem;
-  margin-top: 0.1rem;
-}
-
-.inputError {
-  border-color: var(--color-danger) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
-}
-
 .fieldHint {
   color: var(--color-text-muted);
   font-size: 0.67rem;

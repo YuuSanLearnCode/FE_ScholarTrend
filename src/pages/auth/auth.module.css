@@ -223,17 +223,6 @@
   font-size: 0.8125rem;
 }
 
-.fieldError {
-  color: var(--color-danger);
-  font-size: 0.75rem;
-  margin-top: 0.15rem;
-}
-
-.inputError {
-  border-color: var(--color-danger) !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
-}
-
 .footer {
   margin-top: 1.5rem;
   color: var(--color-text-muted);

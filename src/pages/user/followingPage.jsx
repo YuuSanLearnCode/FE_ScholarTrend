@@ -213,7 +213,6 @@ function FollowingPage() {
             id="following-search"
             type="search"
             placeholder="Search followed items"
-            maxLength={200}
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />

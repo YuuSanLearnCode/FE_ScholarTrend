@@ -69,7 +69,6 @@ function AuthorsPage() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by name, affiliation, or country"
-          maxLength={200}
         />
       </div>
 

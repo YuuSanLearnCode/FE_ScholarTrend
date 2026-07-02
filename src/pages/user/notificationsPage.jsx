@@ -232,17 +232,19 @@ function NotificationsPage() {
               </label>
               <label className={styles.frequencyField}>
                 <span>Frequency</span>
-                <select
+                <input
+                  type="text"
+                  list="notification-frequency-options"
                   value={settings.frequency}
                   onChange={handleSettingChange('frequency')}
                   disabled={settingsSaving}
                   required
-                >
-                  <option value="">Select frequency</option>
-                  <option value="Immediate">Immediate</option>
-                  <option value="Daily">Daily</option>
-                  <option value="Weekly">Weekly</option>
-                </select>
+                />
+                <datalist id="notification-frequency-options">
+                  <option value="Immediate" />
+                  <option value="Daily" />
+                  <option value="Weekly" />
+                </datalist>
               </label>
             </div>
             <div className={styles.settingsActions}>
