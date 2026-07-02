@@ -191,8 +191,8 @@
 }
 
 .followButton:hover:not(:disabled) {
-  border-color: var(--color-brand-light);
-  background: var(--color-brand-bg);
+  border-color: #93c5fd;
+  background: #dbeafe;
 }
 
 .followButton:disabled {
