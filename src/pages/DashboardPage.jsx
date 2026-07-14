@@ -12,7 +12,7 @@ import {
 import StatsCard from '../components/StatsCard'
 import Skeleton from '../components/Skeleton'
 import { getPersonalDashboard, getDashboardOverview } from '../services/dashboardService'
-import styles from './dashboardPage.module.css'
+import styles from './DashboardPage.module.css'
 
 const quickActions = [
   { label: 'Search Papers', path: '/search' },

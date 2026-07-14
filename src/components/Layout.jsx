@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import { getNavItems, ROLES } from "../utils/roles";
-import styles from "./layout.module.css";
+import styles from "./Layout.module.css";
 
 function Layout() {
   const [dark, setDark] = useState(() => localStorage.getItem("theme") === "dark");
