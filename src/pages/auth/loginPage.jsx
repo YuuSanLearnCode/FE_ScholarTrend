@@ -34,7 +34,10 @@ function loadGoogleIdentityScript() {
 
 function getPrimaryAuthRole(result) {
   if (Array.isArray(result?.roles)) {
-    return result.roles.find((role) => String(role).toLowerCase() === "admin") || result.roles[0] || "";
+    const roles = result.roles.map(r => String(r).toLowerCase());
+    if (roles.includes('admin')) return 'Admin';
+    if (roles.includes('researcher')) return 'Researcher';
+    return result.roles[0] || '';
   }
 
   return result?.roles || result?.role || "";

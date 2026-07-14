@@ -2,7 +2,10 @@ import api from './api'
 
 function getPrimaryRole(auth) {
   if (Array.isArray(auth.roles)) {
-    return auth.roles.find((role) => String(role).toLowerCase() === 'admin') || auth.roles[0] || ''
+    const roles = auth.roles.map(r => String(r).toLowerCase());
+    if (roles.includes('admin')) return 'Admin';
+    if (roles.includes('researcher')) return 'Researcher';
+    return auth.roles[0] || '';
   }
 
   return auth.roles || auth.role || ''
