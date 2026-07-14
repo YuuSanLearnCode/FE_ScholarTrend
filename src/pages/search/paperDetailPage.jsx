@@ -443,11 +443,11 @@ function PaperDetailPage() {
               {paper.topics.length > 0 ? (
                 paper.topics.map((topic) => (
                   <Link
-                    key={topic}
-                    to={`/search/results?keyword=${encodeURIComponent(topic)}&page=1&pageSize=10`}
+                    key={topic.id || topic.name}
+                    to={topic.id ? `/topics/${topic.id}` : `/search/results?keyword=${encodeURIComponent(topic.name)}&page=1&pageSize=10`}
                     className={styles.topicTag}
                   >
-                    {topic}
+                    {topic.name}
                   </Link>
                 ))
               ) : (

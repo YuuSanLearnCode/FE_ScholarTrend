@@ -45,7 +45,9 @@ function normalizePaperDetail(paper) {
       ))
       .filter((author) => author.name),
     keywords: paper.keywords ?? [],
-    topics: paper.topics ?? [],
+    topics: (paper.topics ?? []).map((t) =>
+      typeof t === 'string' ? { id: null, name: t } : t
+    ),
     citationCount: paper.citationCount ?? 0,
     viewCount: paper.viewCount ?? 0,
     isBookmarked: Boolean(paper.isBookmarked),

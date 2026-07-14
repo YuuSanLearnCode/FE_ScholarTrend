@@ -39,6 +39,27 @@ function formatDateTime(value) {
   }).format(date)
 }
 
+function AiInferredText({ text = '' }) {
+  if (typeof text !== 'string') return <>{text}</>
+  const inferredTag = '[AI Inferred]'
+  if (text.includes(inferredTag)) {
+    const cleanText = text.replace(inferredTag, '').trim()
+    return (
+      <span className={styles.aiInferredWrapper}>
+        {cleanText}{' '}
+        <span
+          className={styles.aiIcon}
+          title="This data is inferred by AI and is for reference only."
+          style={{ cursor: 'help', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}
+        >
+          (🤖 AI)
+        </span>
+      </span>
+    )
+  }
+  return <>{text}</>
+}
+
 function TopicDetailPage() {
   const { topicId } = useParams()
   const [topic, setTopic] = useState(null)
@@ -78,8 +99,8 @@ function TopicDetailPage() {
           setInsights(null)
           setInsightsError(
             insightsResponse.reason?.response?.data?.message ||
-              insightsResponse.reason?.message ||
-              'Could not load topic insights.',
+            insightsResponse.reason?.message ||
+            'Could not load topic insights.',
           )
         }
 
@@ -92,8 +113,8 @@ function TopicDetailPage() {
           } catch (followErr) {
             setFollowError(
               followErr.response?.data?.message ||
-                followErr.message ||
-                'Could not load follow status.',
+              followErr.message ||
+              'Could not load follow status.',
             )
           }
         }
@@ -123,8 +144,8 @@ function TopicDetailPage() {
     } catch (err) {
       setFollowError(
         err.response?.data?.message ||
-          err.message ||
-          `Failed to ${isFollowing ? 'unfollow' : 'follow'} topic.`,
+        err.message ||
+        `Failed to ${isFollowing ? 'unfollow' : 'follow'} topic.`,
       )
     } finally {
       setFollowLoading(false)
@@ -243,7 +264,7 @@ function TopicDetailPage() {
                 <h3>Top methods</h3>
                 <div className={styles.insightTags}>
                   {topMethods.length > 0 ? (
-                    topMethods.map((method) => <span key={method}>{method}</span>)
+                    topMethods.map((method) => <span key={method}><AiInferredText text={method} /></span>)
                   ) : (
                     <span>No methods found</span>
                   )}
@@ -253,7 +274,7 @@ function TopicDetailPage() {
                 <h3>Top datasets</h3>
                 <div className={styles.insightTags}>
                   {topDatasets.length > 0 ? (
-                    topDatasets.map((dataset) => <span key={dataset}>{dataset}</span>)
+                    topDatasets.map((dataset) => <span key={dataset}><AiInferredText text={dataset} /></span>)
                   ) : (
                     <span>No datasets found</span>
                   )}
@@ -273,8 +294,8 @@ function TopicDetailPage() {
                           <span>{formatNumber(item.paperCount)} papers</span>
                         </div>
                         <section>
-                          <h4>{item.achievement || 'Research milestone'}</h4>
-                          <p>{item.summary || 'No summary available.'}</p>
+                          <h4><AiInferredText text={item.achievement || 'Research milestone'} /></h4>
+                          <p><AiInferredText text={item.summary || 'No summary available.'} /></p>
                         </section>
                       </li>
                     ))}
@@ -290,8 +311,8 @@ function TopicDetailPage() {
                   <div className={styles.opportunityList}>
                     {insightOpportunities.map((opportunity) => (
                       <article key={opportunity.title || opportunity.description}>
-                        <h4>{opportunity.title || 'Research opportunity'}</h4>
-                        <p>{opportunity.description || 'No description available.'}</p>
+                        <h4><AiInferredText text={opportunity.title || 'Research opportunity'} /></h4>
+                        <p><AiInferredText text={opportunity.description || 'No description available.'} /></p>
                         {Array.isArray(opportunity.evidences) && opportunity.evidences.length > 0 && (
                           <div className={styles.evidenceList}>
                             {opportunity.evidences.map((evidence) => (

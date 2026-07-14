@@ -204,7 +204,9 @@
   gap: 0.45rem;
 }
 
-.insightTags span {
+.insightTags > span {
+  display: inline-flex;
+  align-items: center;
   max-width: 100%;
   overflow: hidden;
   padding: 0.38rem 0.58rem;
@@ -216,6 +218,16 @@
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.aiInferredWrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.aiIcon {
+  margin-left: 0.3rem;
+  font-size: 0.8rem;
 }
 
 .timelineList {
