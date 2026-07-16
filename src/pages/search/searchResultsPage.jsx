@@ -103,16 +103,7 @@ function SearchResultsPage() {
       : null,
   ].filter(Boolean)
 
-  if (loading) {
-    return (
-      <section className={styles.resultsPage}>
-        <div className={styles.pageHeader}>
-          <Skeleton variant="title" width="40%" />
-        </div>
-        <Skeleton variant="card" count={3} />
-      </section>
-    )
-  }
+
 
   return (
     <section className={styles.resultsPage}>
@@ -148,20 +139,22 @@ function SearchResultsPage() {
         </div>
       )}
 
-      {error ? (
+      {loading && result.items.length === 0 ? (
+        <Skeleton variant="card" count={3} />
+      ) : error ? (
         <div className={styles.errorState}>
           <strong>Search could not be completed</strong>
           <p>{error}</p>
         </div>
       ) : (
-        <>
+        <div style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           <SearchResultsList papers={result.items} />
           <Pagination
             page={result.page || currentPage}
             totalPages={result.totalPages}
             onPageChange={handlePageChange}
           />
-        </>
+        </div>
       )}
     </section>
   )

@@ -31,6 +31,13 @@ function Icon({ name, size = 18 }) {
         <path d="M8 10V7a4 4 0 0 1 8 0v3" />
       </>
     ),
+    alert: (
+      <>
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </>
+    ),
   };
 
   return (
@@ -134,6 +141,7 @@ function AdminUserManagementPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, user: null, nextActive: false });
   const currentUserId = localStorage.getItem("userId");
 
   useEffect(() => {
@@ -150,6 +158,7 @@ function AdminUserManagementPage() {
 
   useEffect(() => {
     let active = true;
+    window.scrollTo({ top: 0, behavior: "smooth" });
 
     async function fetchUsers() {
       setLoading(true);
@@ -258,11 +267,16 @@ function AdminUserManagementPage() {
 
     const nextActive = !isUserActive(user);
     if (!nextActive) {
-      const confirmed = window.confirm(
-        `Deactivate ${getDisplayName(user)}? They will no longer be able to sign in.`,
-      );
-      if (!confirmed) return;
+      setConfirmModal({ isOpen: true, user, nextActive });
+      return;
     }
+
+    executeToggleStatus(user, nextActive);
+  };
+
+  const executeToggleStatus = async (user, nextActive) => {
+    const id = getUserId(user);
+    if (!id) return;
 
     setPendingId(id);
     setNotice("");
@@ -296,6 +310,41 @@ function AdminUserManagementPage() {
 
   return (
     <section className={styles.userPage}>
+      {confirmModal.isOpen && (
+        <div className={styles.confirmBackdrop}>
+          <div className={styles.confirmPanel}>
+            <div className={styles.confirmHeader}>
+              <div className={styles.confirmIconWrap}>
+                <Icon name="alert" size={24} />
+              </div>
+              <h3>Deactivate {getDisplayName(confirmModal.user)}?</h3>
+            </div>
+            <p className={styles.confirmText}>
+              They will no longer be able to sign in to their account. You can reactivate them later if needed.
+            </p>
+            <div className={styles.confirmActions}>
+              <button 
+                type="button" 
+                className={styles.cancelBtn} 
+                onClick={() => setConfirmModal({ isOpen: false, user: null, nextActive: false })}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className={styles.confirmDeactivateBtn}
+                onClick={() => {
+                  executeToggleStatus(confirmModal.user, confirmModal.nextActive);
+                  setConfirmModal({ isOpen: false, user: null, nextActive: false });
+                }}
+              >
+                Deactivate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.hero}>
         <div>
           <span className={styles.kicker}>Access control</span>
@@ -447,7 +496,7 @@ function AdminUserManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && users.length === 0 ? (
                 Array.from({ length: 5 }, (_, index) => (
                   <tr key={index} className={styles.skeletonRow}>
                     <td><span /></td>

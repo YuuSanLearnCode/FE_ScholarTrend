@@ -83,6 +83,7 @@ function NotificationsPage() {
   }
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     async function fetchNotifications() {
       setLoading(true)
       setError('')
@@ -260,10 +261,10 @@ function NotificationsPage() {
 
       {error && <p className={styles.listError}>{error}</p>}
 
-      {loading ? (
+      {loading && notifications.length === 0 ? (
         <Skeleton variant="card" count={3} />
       ) : (
-        <ul className={styles.list}>
+        <ul className={styles.list} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           {notifications.length === 0 && (
             <li className={styles.listItem}>
               <span className={styles.listItemText}>No notifications.</span>

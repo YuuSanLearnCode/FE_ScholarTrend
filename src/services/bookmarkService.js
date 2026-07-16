@@ -8,9 +8,11 @@ function unwrapResponse(response, fallbackMessage) {
   return response.data
 }
 
-export async function getBookmarks() {
-  const { data: response } = await api.get('/bookmarks')
-  return unwrapResponse(response, 'Failed to load bookmarks.') ?? []
+export async function getBookmarks({ page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/bookmarks', {
+    params: { page, pageSize }
+  })
+  return unwrapResponse(response, 'Failed to load bookmarks.')
 }
 
 export async function addBookmark(paperId) {

@@ -16,17 +16,25 @@ function normalizeFollow(item, fallbackType) {
     followId: item.id,
     id: targetId,
     name: item.name ?? `${fallbackType} ${targetId}`,
-    type: item.type ?? fallbackType,
+    type: fallbackType, // Always enforce the fallbackType (Topic, Author, Paper, Journal)
     followedAt: item.followedAt ?? null,
   }
 }
 
+export async function getFollowCounts() {
+  const { data: response } = await api.get('/follows/counts')
+  return unwrapResponse(response, 'Failed to load follow counts.')
+}
+
 /** Lấy danh sách topics đang follow */
-export async function getFollowedTopics() {
-  const { data: response } = await api.get('/follows/topics')
+export async function getFollowedTopics({ page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/follows/topics', { params: { page, pageSize } })
   const result = unwrapResponse(response, 'Failed to load followed topics.')
 
-  return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Topic'))
+  return {
+    ...result,
+    items: (Array.isArray(result.items) ? result.items : []).map((item) => normalizeFollow(item, 'Topic'))
+  }
 }
 
 /** Follow 1 topic */
@@ -53,11 +61,14 @@ export async function unfollowTopic(topicId) {
 }
 
 /** Lấy danh sách journals đang follow */
-export async function getFollowedJournals() {
-  const { data: response } = await api.get('/follows/journals')
+export async function getFollowedJournals({ page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/follows/journals', { params: { page, pageSize } })
   const result = unwrapResponse(response, 'Failed to load followed journals.')
 
-  return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Journal'))
+  return {
+    ...result,
+    items: (Array.isArray(result.items) ? result.items : []).map((item) => normalizeFollow(item, 'Journal'))
+  }
 }
 
 /** Follow 1 journal */
@@ -83,11 +94,14 @@ export async function unfollowJournal(journalId) {
   return unwrapResponse(response, 'Failed to unfollow journal.')
 }
 
-export async function getFollowedAuthors() {
-  const { data: response } = await api.get('/follows/authors')
+export async function getFollowedAuthors({ page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/follows/authors', { params: { page, pageSize } })
   const result = unwrapResponse(response, 'Failed to load followed authors.')
 
-  return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Author'))
+  return {
+    ...result,
+    items: (Array.isArray(result.items) ? result.items : []).map((item) => normalizeFollow(item, 'Author'))
+  }
 }
 
 export async function followAuthor(authorId) {
@@ -111,11 +125,14 @@ export async function unfollowAuthor(authorId) {
   return unwrapResponse(response, 'Failed to unfollow author.')
 }
 
-export async function getFollowedPapers() {
-  const { data: response } = await api.get('/follows/papers')
+export async function getFollowedPapers({ page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/follows/papers', { params: { page, pageSize } })
   const result = unwrapResponse(response, 'Failed to load followed papers.')
 
-  return (Array.isArray(result) ? result : []).map((item) => normalizeFollow(item, 'Paper'))
+  return {
+    ...result,
+    items: (Array.isArray(result.items) ? result.items : []).map((item) => normalizeFollow(item, 'Paper'))
+  }
 }
 
 export async function followPaper(paperId) {

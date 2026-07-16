@@ -17,7 +17,9 @@ function SearchResultsList({ papers }) {
       }
 
       try {
-        const followedPapers = await getFollowedPapers()
+        // We fetch a large page size here so the UI can check followed status for most papers
+        const result = await getFollowedPapers({ page: 1, pageSize: 1000 })
+        const followedPapers = result.items ?? []
         if (active) {
           setFollowedPaperIds(
             new Set(

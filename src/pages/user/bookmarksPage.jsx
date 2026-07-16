@@ -8,15 +8,18 @@ import styles from './simpleListPage.module.css'
 function BookmarksPage() {
   const [papers, setPapers] = useState([])
   const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const pageSize = 10
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     async function fetchBookmarks() {
+      setLoading(true)
       try {
-        const result = await getBookmarks()
-        setPapers(result.map((bookmark) => ({
+        const result = await getBookmarks({ page, pageSize })
+        setPapers((result?.items ?? []).map((bookmark) => ({
           id: bookmark.paperId,
           title: bookmark.title,
           year: bookmark.publicationYear ?? 'N/A',
@@ -24,43 +27,41 @@ function BookmarksPage() {
           journal: bookmark.journalName || 'Unknown journal',
           abstract: `${bookmark.citationCount ?? 0} citations · Saved ${new Date(bookmark.savedAt).toLocaleDateString()}`,
         })))
+        setTotalPages(result?.totalPages || 1)
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load bookmarks')
         setPapers([])
+        setTotalPages(1)
       } finally {
         setLoading(false)
       }
     }
     fetchBookmarks()
-  }, [])
-
-  const paginatedPapers = papers.slice((page - 1) * pageSize, page * pageSize)
-  const totalPages = Math.max(1, Math.ceil(papers.length / pageSize))
-
-  if (loading) {
-    return (
-      <section className={styles.panel}>
-        <Skeleton variant="title" width="30%" />
-        <Skeleton variant="card" count={3} />
-      </section>
-    )
-  }
-
-  if (error) {
-    return (
-      <section className={styles.panel}>
-        <p>{error}</p>
-      </section>
-    )
-  }
+  }, [page])
 
   return (
     <section className={styles.panel}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>My Bookmarks</h1>
       </div>
-      <SearchResultsList papers={paginatedPapers} />
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      
+      {loading && papers.length === 0 ? (
+        <div style={{ marginTop: '1rem' }}>
+          <Skeleton variant="card" count={3} />
+        </div>
+      ) : error ? (
+        <p>{error}</p>
+      ) : (
+        <div style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+          <SearchResultsList papers={papers} />
+        </div>
+      )}
+      
+      {totalPages > 1 && !error && (
+        <div style={{ marginTop: '2rem', pointerEvents: loading ? 'none' : 'auto' }}>
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </div>
+      )}
     </section>
   )
 }

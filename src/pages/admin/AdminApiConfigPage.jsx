@@ -776,7 +776,7 @@ function AdminApiConfigPage() {
         )}
       </article>
 
-      <article className={styles.routesPanel}>
+      <article className={styles.routesPanel} id="admin-schedule-history">
         <div className={styles.syncPanelHeader}>
           <div>
             <span className={styles.kicker}>Synchronization</span>
@@ -816,7 +816,7 @@ function AdminApiConfigPage() {
         )}
 
         <div className={styles.syncJobsList}>
-          {scheduleHistoryLoading ? (
+          {scheduleHistoryLoading && scheduleHistory.length === 0 ? (
             Array.from({ length: 3 }, (_, index) => (
               <div className={styles.syncSkeleton} key={index}>
                 <span />
@@ -858,7 +858,10 @@ function AdminApiConfigPage() {
           <Pagination
             page={scheduleHistoryPage}
             totalPages={scheduleHistoryTotalPages}
-            onPageChange={setScheduleHistoryPage}
+            onPageChange={(p) => {
+              setScheduleHistoryPage(p);
+              document.getElementById("admin-schedule-history")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
           />
         </div>
       </article>
@@ -1043,9 +1046,9 @@ function AdminApiConfigPage() {
           </article>
         )}
 
-        {syncStatusLoading ? (
-          <div className={styles.statusSummary}>
-            {Array.from({ length: 3 }, (_, index) => (
+        {syncStatusLoading && !syncStatus ? (
+          <div className={styles.statusGrid}>
+            {Array.from({ length: 4 }, (_, index) => (
               <div className={styles.syncSkeleton} key={index}>
                 <span />
                 <span />
@@ -1162,7 +1165,7 @@ function AdminApiConfigPage() {
         )}
       </article>
 
-      <article className={styles.routesPanel}>
+      <article className={styles.routesPanel} id="admin-sync-logs">
         <div className={styles.syncPanelHeader}>
           <div>
             <span className={styles.kicker}>Synchronization</span>
@@ -1202,7 +1205,7 @@ function AdminApiConfigPage() {
         )}
 
         <div className={styles.syncJobsList}>
-          {syncLogsLoading ? (
+          {syncLogsLoading && syncLogs.length === 0 ? (
             Array.from({ length: 3 }, (_, index) => (
               <div className={styles.syncSkeleton} key={index}>
                 <span />
@@ -1244,12 +1247,15 @@ function AdminApiConfigPage() {
           <Pagination
             page={syncLogPage}
             totalPages={syncLogTotalPages}
-            onPageChange={setSyncLogPage}
+            onPageChange={(p) => {
+              setSyncLogPage(p);
+              document.getElementById("admin-sync-logs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
           />
         </div>
       </article>
 
-      <article className={styles.routesPanel}>
+      <article className={styles.routesPanel} id="admin-pending-sync">
         <div className={styles.syncPanelHeader}>
           <div>
             <span className={styles.kicker}>Synchronization</span>
@@ -1289,7 +1295,7 @@ function AdminApiConfigPage() {
         )}
 
         <div className={styles.syncJobsList}>
-          {pendingLoading ? (
+          {pendingLoading && pendingJobs.length === 0 ? (
             Array.from({ length: 3 }, (_, index) => (
               <div className={styles.syncSkeleton} key={index}>
                 <span />
@@ -1335,7 +1341,10 @@ function AdminApiConfigPage() {
           <Pagination
             page={pendingPage}
             totalPages={pendingTotalPages}
-            onPageChange={setPendingPage}
+            onPageChange={(p) => {
+              setPendingPage(p);
+              document.getElementById("admin-pending-sync")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
           />
         </div>
 
