@@ -968,12 +968,27 @@
 .syncLogMessage {
   margin-top: 10px;
   padding: 9px 10px;
-  color: #8d493f;
-  background: #fff6f3;
-  border: 1px solid #efd8d2;
   border-radius: 8px;
   font-size: 9px;
   line-height: 1.5;
+}
+
+.syncLogError {
+  color: #8d493f;
+  background: #fff6f3;
+  border: 1px solid #efd8d2;
+}
+
+.syncLogSuccess {
+  color: #337061;
+  background: #eaf4f0;
+  border: 1px solid #d8e7e2;
+}
+
+.syncLogWarning {
+  color: #8d6633;
+  background: #fff4df;
+  border: 1px solid #f0e1c2;
 }
 
 .syncEmpty {

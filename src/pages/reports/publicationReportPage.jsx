@@ -29,7 +29,8 @@ function formatNumber(value) {
 }
 
 function formatDate(value) {
-  const date = value ? new Date(value) : null
+  const dateStr = value ? (typeof value === 'string' && !value.endsWith('Z') && !value.match(/[+-]\d{2}:?\d{2}$/) ? value + 'Z' : value) : null;
+  const date = dateStr ? new Date(dateStr) : null;
   if (!date || Number.isNaN(date.getTime())) return 'Unknown'
 
   return new Intl.DateTimeFormat('en', {

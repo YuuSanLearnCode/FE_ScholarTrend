@@ -29,11 +29,16 @@ function getRoleLabel(role) {
 function formatDate(value) {
   if (!value) return 'Not available'
 
+  let dateString = value;
+  if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.match(/[+-]\d{2}:?\d{2}$/)) {
+    dateString += 'Z';
+  }
+
   return new Intl.DateTimeFormat('en', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(value))
+  }).format(new Date(dateString))
 }
 
 function resizeAvatar(file) {

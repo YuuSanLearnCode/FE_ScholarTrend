@@ -30,7 +30,11 @@ function formatNumber(value) {
 
 function formatDateTime(value) {
   if (!value) return 'Not analyzed yet'
-  const date = new Date(value)
+  let dateString = value;
+  if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.match(/[+-]\d{2}:?\d{2}$/)) {
+    dateString += 'Z';
+  }
+  const date = new Date(dateString)
   if (Number.isNaN(date.getTime())) return 'Not analyzed yet'
 
   return new Intl.DateTimeFormat('en', {
