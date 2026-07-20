@@ -7,6 +7,31 @@
   margin-top: 1.5rem;
 }
 
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  margin-bottom: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 750;
+  transition: var(--transition);
+}
+
+.backButton:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  transform: translateX(-1px);
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -167,10 +192,10 @@
 }
 
 .bookmarkButton {
-  border: 1px solid var(--color-brand);
-  background: var(--color-brand);
-  color: #ffffff;
-  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.17);
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: var(--color-brand);
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.08);
 }
 
 .bookmarkButton svg {
@@ -203,8 +228,9 @@
 }
 
 .bookmarked {
-  border-color: var(--color-success);
-  background: var(--color-success);
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
 }
 
 .secondaryButton {

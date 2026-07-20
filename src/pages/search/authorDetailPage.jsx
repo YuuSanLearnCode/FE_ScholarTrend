@@ -14,6 +14,16 @@ function formatNumber(value) {
   return new Intl.NumberFormat('en').format(value ?? 0)
 }
 
+function getInitials(name) {
+  return String(name || 'Author')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase()
+}
+
 function AuthorDetailPage() {
   const { authorId, authorName } = useParams()
   const [author, setAuthor] = useState(null)
@@ -114,16 +124,28 @@ function AuthorDetailPage() {
     )
   }
 
+  const recentPapers = author.recentPapers ?? []
+  const metaItems = [
+    author.country,
+    author.externalId ? `External ID ${author.externalId}` : '',
+  ].filter(Boolean)
+
   return (
     <section className={styles.page}>
       <header className={styles.hero}>
-        <div>
-          <span className={styles.eyebrow}>Research author</span>
-          <h1>{author.name}</h1>
-          <p>{author.affiliation || 'Affiliation not specified'}</p>
-          <div className={styles.metaLine}>
-            {author.country && <span>{author.country}</span>}
-            {author.externalId && <span>External ID {author.externalId}</span>}
+        <div className={styles.identity}>
+          <div className={styles.avatar}>{getInitials(author.name)}</div>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>Author profile</span>
+            <h1>{author.name}</h1>
+            <p>{author.affiliation || 'Affiliation not specified'}</p>
+            {metaItems.length > 0 && (
+              <div className={styles.metaLine}>
+                {metaItems.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.heroActions}>
@@ -135,24 +157,24 @@ function AuthorDetailPage() {
               disabled={followLoading}
             >
               {followLoading
-                ? isFollowing ? 'Unfollowing...' : 'Following...'
-                : isFollowing ? 'Unfollow author' : 'Follow author'}
+                ? 'Saving...'
+                : isFollowing ? 'Unfollow' : 'Follow'}
             </button>
           ) : (
-            <Link className={styles.followButton} to="/login">Sign in to follow</Link>
+            <Link className={styles.followButton} to="/login">Sign in</Link>
           )}
           <Link
             className={styles.primaryLink}
             to={`/search/results?query=${encodeURIComponent(author.name)}&searchType=Author&page=1&pageSize=10`}
           >
-            View all papers
+            View papers
           </Link>
         </div>
       </header>
 
       {followError && <p className={styles.followError}>{followError}</p>}
 
-      <div className={styles.statsGrid}>
+      <div className={styles.metricsBar}>
         <article>
           <span>Papers</span>
           <strong>{formatNumber(author.paperCount)}</strong>
@@ -167,7 +189,7 @@ function AuthorDetailPage() {
         </article>
         <article>
           <span>Recent papers</span>
-          <strong>{formatNumber(author.recentPapers.length)}</strong>
+          <strong>{formatNumber(recentPapers.length)}</strong>
         </article>
       </div>
 
@@ -177,9 +199,9 @@ function AuthorDetailPage() {
             <span className={styles.eyebrow}>Latest research</span>
             <h2>Recent papers</h2>
           </div>
-          <span>{author.recentPapers.length} shown</span>
+          <span>{recentPapers.length} shown</span>
         </div>
-        <SearchResultsList papers={author.recentPapers} />
+        <SearchResultsList papers={recentPapers} />
       </section>
     </section>
   )
