@@ -72,7 +72,11 @@ function normalizeSyncStatus(result) {
 
 function formatDate(value) {
   if (!value) return "Not available";
-  const date = new Date(value);
+  let dateString = value;
+  if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.match(/[+-]\d{2}:?\d{2}$/)) {
+    dateString += 'Z';
+  }
+  const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return "Not available";
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
@@ -959,7 +963,15 @@ function AdminApiConfigPage() {
                       <span><strong>{source.message || "No message"}</strong>Message</span>
                     </div>
                     {source.errorMessage && (
-                      <div className={styles.syncLogMessage}>
+                      <div
+                        className={`${styles.syncLogMessage} ${
+                          source.status === "Completed" || source.status === "AwaitingApproval"
+                            ? styles.syncLogSuccess
+                            : source.status === "Skipped"
+                              ? styles.syncLogWarning
+                              : styles.syncLogError
+                        }`}
+                      >
                         {source.errorMessage}
                       </div>
                     )}

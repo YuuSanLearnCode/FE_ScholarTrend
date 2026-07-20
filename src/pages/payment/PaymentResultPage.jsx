@@ -13,10 +13,13 @@ const PaymentResultPage = () => {
   // code="00", status="PAID", or cancel="false" means success.
   // We keep status="success" as a fallback for our hardcoded returnUrl.
   const isSuccess = 
-    status === 'success' || 
-    status === 'PAID' || 
-    code === '00' || 
-    cancel === 'false';
+    cancel !== 'true' && 
+    (
+      status === 'success' || 
+      status === 'PAID' || 
+      code === '00' || 
+      cancel === 'false'
+    );
 
   return (
     <div className={styles.container}>

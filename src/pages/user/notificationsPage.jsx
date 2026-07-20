@@ -11,7 +11,11 @@ import {
 import styles from './simpleListPage.module.css'
 
 function formatDate(value) {
-  const date = value ? new Date(value) : null
+  let dateString = value;
+  if (typeof dateString === 'string' && !dateString.endsWith('Z') && !dateString.match(/[+-]\d{2}:?\d{2}$/)) {
+    dateString += 'Z';
+  }
+  const date = dateString ? new Date(dateString) : null
   if (!date || Number.isNaN(date.getTime())) return ''
 
   return new Intl.DateTimeFormat('en', {
