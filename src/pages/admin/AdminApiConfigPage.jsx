@@ -125,11 +125,20 @@ function parseScheduleQueries(value) {
     .filter(Boolean);
 }
 
+const getInitialPageSize = (key, defaultValue = 20) => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? Number(saved) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
 function AdminApiConfigPage() {
   const [syncStatus, setSyncStatus] = useState(null);
   const [syncStatusLoading, setSyncStatusLoading] = useState(true);
   const [syncStatusError, setSyncStatusError] = useState("");
-  const [sourceStatusName, setSourceStatusName] = useState("");
+  const [sourceStatusName, setSourceStatusName] = useState("SemanticScholar");
   const [sourceStatusDetail, setSourceStatusDetail] = useState(null);
   const [sourceStatusLoading, setSourceStatusLoading] = useState(false);
   const [sourceStatusError, setSourceStatusError] = useState("");
@@ -141,12 +150,12 @@ function AdminApiConfigPage() {
   const [syncScheduleNotice, setSyncScheduleNotice] = useState("");
   const [scheduleHistory, setScheduleHistory] = useState([]);
   const [scheduleHistoryPage, setScheduleHistoryPage] = useState(1);
-  const [scheduleHistoryPageSize, setScheduleHistoryPageSize] = useState(20);
+  const [scheduleHistoryPageSize, setScheduleHistoryPageSize] = useState(() => getInitialPageSize("admin_schedule_page_size", 20));
   const [scheduleHistoryTotalPages, setScheduleHistoryTotalPages] = useState(1);
   const [scheduleHistoryLoading, setScheduleHistoryLoading] = useState(true);
   const [scheduleHistoryError, setScheduleHistoryError] = useState("");
   const [triggerDraft, setTriggerDraft] = useState({
-    sourceName: "",
+    sourceName: "SemanticScholar",
     paperLimit: 50,
     searchQuery: "",
   });
@@ -155,13 +164,13 @@ function AdminApiConfigPage() {
   const [triggerResult, setTriggerResult] = useState(null);
   const [pendingJobs, setPendingJobs] = useState([]);
   const [pendingPage, setPendingPage] = useState(1);
-  const [pendingPageSize, setPendingPageSize] = useState(20);
+  const [pendingPageSize, setPendingPageSize] = useState(() => getInitialPageSize("admin_pending_page_size", 20));
   const [pendingTotalPages, setPendingTotalPages] = useState(1);
   const [pendingLoading, setPendingLoading] = useState(true);
   const [pendingError, setPendingError] = useState("");
   const [syncLogs, setSyncLogs] = useState([]);
   const [syncLogPage, setSyncLogPage] = useState(1);
-  const [syncLogPageSize, setSyncLogPageSize] = useState(20);
+  const [syncLogPageSize, setSyncLogPageSize] = useState(() => getInitialPageSize("admin_synclog_page_size", 20));
   const [syncLogTotalPages, setSyncLogTotalPages] = useState(1);
   const [syncLogsLoading, setSyncLogsLoading] = useState(true);
   const [syncLogsError, setSyncLogsError] = useState("");
@@ -171,6 +180,7 @@ function AdminApiConfigPage() {
   const [selectedPaperIds, setSelectedPaperIds] = useState([]);
   const [approveLoading, setApproveLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [approveError, setApproveError] = useState("");
   const [approveNotice, setApproveNotice] = useState("");
 
@@ -481,6 +491,9 @@ function AdminApiConfigPage() {
       );
     } finally {
       setSyncDetailLoading(false);
+      setTimeout(() => {
+        document.getElementById("admin-sync-detail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
   };
 
@@ -555,12 +568,8 @@ function AdminApiConfigPage() {
   const handleRejectSyncJob = async () => {
     if (!selectedSyncJob?.id) return;
 
-    const confirmed = window.confirm(
-      `Reject sync #${selectedSyncJob.id}? All pending papers in this sync will be rejected.`,
-    );
-    if (!confirmed) return;
-
     setRejectLoading(true);
+    setShowRejectConfirm(false);
     setApproveError("");
     setApproveNotice("");
 
@@ -613,11 +622,6 @@ function AdminApiConfigPage() {
   const triggerSourceResults = Array.isArray(triggerResult?.sourceResults)
     ? triggerResult.sourceResults
     : [];
-  const sourceNameOptions = Array.from(
-    new Set(
-      lockedSources.map((source) => source?.sourceName).filter(Boolean),
-    ),
-  );
 
   return (
     <section className={styles.configPage}>
@@ -792,7 +796,9 @@ function AdminApiConfigPage() {
               <select
                 value={scheduleHistoryPageSize}
                 onChange={(event) => {
-                  setScheduleHistoryPageSize(Number(event.target.value));
+                  const val = event.target.value;
+                  setScheduleHistoryPageSize(Number(val));
+                  localStorage.setItem("admin_schedule_page_size", val);
                   setScheduleHistoryPage(1);
                 }}
               >
@@ -881,15 +887,19 @@ function AdminApiConfigPage() {
         <form className={styles.triggerForm} onSubmit={handleTriggerSync}>
           <label>
             Source name
-            <input
-              type="text"
-              list="sync-source-names"
+            <select
               name="sourceName"
               value={triggerDraft.sourceName}
               onChange={handleTriggerDraftChange}
-              placeholder="SemanticScholar"
               disabled={triggerLoading}
-            />
+            >
+              <option value="SemanticScholar">Semantic Scholar</option>
+              <option value="OpenAlex">OpenAlex</option>
+              <option value="CrossRef">CrossRef</option>
+              <option value="ArXiv">ArXiv</option>
+              <option value="IEEE Xplore">IEEE Xplore</option>
+              <option value="PubMed">PubMed</option>
+            </select>
           </label>
           <label>
             Paper limit
@@ -965,10 +975,10 @@ function AdminApiConfigPage() {
                     {source.errorMessage && (
                       <div
                         className={`${styles.syncLogMessage} ${
-                          source.status === "Completed" || source.status === "AwaitingApproval"
-                            ? styles.syncLogSuccess
-                            : source.status === "Skipped"
-                              ? styles.syncLogWarning
+                          source.papersFetched === 0 || source.status === "Skipped"
+                            ? styles.syncLogWarning
+                            : source.status === "Completed" || source.status === "AwaitingApproval"
+                              ? styles.syncLogSuccess
                               : styles.syncLogError
                         }`}
                       >
@@ -1009,23 +1019,22 @@ function AdminApiConfigPage() {
         <form className={styles.sourceStatusForm} onSubmit={handleSourceStatusSubmit}>
           <label>
             Source name
-            <input
-              type="text"
-              list="sync-source-names"
+            <select
               value={sourceStatusName}
               onChange={(event) => {
                 setSourceStatusName(event.target.value);
                 setSourceStatusError("");
               }}
-              placeholder="SemanticScholar"
               disabled={sourceStatusLoading}
-            />
+            >
+              <option value="SemanticScholar">Semantic Scholar</option>
+              <option value="OpenAlex">OpenAlex</option>
+              <option value="CrossRef">CrossRef</option>
+              <option value="ArXiv">ArXiv</option>
+              <option value="IEEE Xplore">IEEE Xplore</option>
+              <option value="PubMed">PubMed</option>
+            </select>
           </label>
-          <datalist id="sync-source-names">
-            {sourceNameOptions.map((sourceName) => (
-              <option key={sourceName} value={sourceName} />
-            ))}
-          </datalist>
           <button type="submit" disabled={sourceStatusLoading}>
             {sourceStatusLoading ? "Checking..." : "Check source"}
           </button>
@@ -1189,7 +1198,9 @@ function AdminApiConfigPage() {
               <select
                 value={syncLogPageSize}
                 onChange={(event) => {
-                  setSyncLogPageSize(Number(event.target.value));
+                  const val = event.target.value;
+                  setSyncLogPageSize(Number(val));
+                  localStorage.setItem("admin_synclog_page_size", val);
                   setSyncLogPage(1);
                 }}
               >
@@ -1279,7 +1290,9 @@ function AdminApiConfigPage() {
               <select
                 value={pendingPageSize}
                 onChange={(event) => {
-                  setPendingPageSize(Number(event.target.value));
+                  const val = event.target.value;
+                  setPendingPageSize(Number(val));
+                  localStorage.setItem("admin_pending_page_size", val);
                   setPendingPage(1);
                 }}
               >
@@ -1361,7 +1374,7 @@ function AdminApiConfigPage() {
         </div>
 
         {selectedSyncJob && (
-          <div className={styles.syncDetailPanel}>
+          <div className={styles.syncDetailPanel} id="admin-sync-detail">
             <div className={styles.syncDetailHeader}>
               <div>
                 <span className={styles.kicker}>Sync detail</span>
@@ -1375,6 +1388,7 @@ function AdminApiConfigPage() {
                   setSelectedPaperIds([]);
                   setApproveError("");
                   setApproveNotice("");
+                  setShowRejectConfirm(false);
                 }}
               >
                 Close
@@ -1426,10 +1440,10 @@ function AdminApiConfigPage() {
                 <button
                   type="button"
                   className={styles.rejectButton}
-                  onClick={handleRejectSyncJob}
+                  onClick={() => setShowRejectConfirm(true)}
                   disabled={reviewBusy}
                 >
-                  {rejectLoading ? "Rejecting..." : "Reject sync"}
+                  Reject sync
                 </button>
               </div>
             </div>
@@ -1489,6 +1503,45 @@ function AdminApiConfigPage() {
           </div>
         )}
       </article>
+
+      {showRejectConfirm && (
+        <div className={styles.modalOverlay} onClick={() => setShowRejectConfirm(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalIcon}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <h3>Reject Sync #{selectedSyncJob?.id}?</h3>
+            </div>
+            <p>
+              They will no longer be available to import into the library.<br />
+              All pending papers in this sync will be permanently rejected.
+            </p>
+            <div className={styles.modalActions}>
+              <button 
+                type="button" 
+                className={styles.modalCancel} 
+                onClick={() => setShowRejectConfirm(false)}
+                disabled={rejectLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className={styles.modalConfirm} 
+                onClick={handleRejectSyncJob}
+                disabled={rejectLoading}
+              >
+                {rejectLoading ? "Rejecting..." : "Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

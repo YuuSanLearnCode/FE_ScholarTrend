@@ -103,8 +103,6 @@ function SearchResultsPage() {
       : null,
   ].filter(Boolean)
 
-
-
   return (
     <section className={styles.resultsPage}>
       <div className={styles.pageHeader}>

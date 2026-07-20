@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, ScrollRestoration } from "react-router-dom";
 import { getUnreadNotificationCount } from "../services/notificationService";
 import { getNavItems, ROLES } from "../utils/roles";
 import styles from "./Layout.module.css";
@@ -133,7 +133,9 @@ function Layout() {
                     <path d="M10 20a2 2 0 0 0 4 0" />
                   </svg>
                   {unreadNotifications > 0 && (
-                    <span className={styles.notificationDot} aria-hidden="true" />
+                    <span className={styles.notificationBadge} aria-hidden="true">
+                      {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                    </span>
                   )}
                 </NavLink>
                 <div className={styles.userMenu}>
@@ -185,6 +187,7 @@ function Layout() {
       </header>
 
       <main className={styles.main}>
+        <ScrollRestoration />
         <Outlet />
       </main>
 

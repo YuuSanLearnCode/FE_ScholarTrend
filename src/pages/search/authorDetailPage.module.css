@@ -4,6 +4,33 @@
   animation: fadeIn 0.3s ease;
 }
 
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--color-brand-bg);
+  color: var(--color-brand);
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  width: fit-content;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+.backButton:hover {
+  background: var(--color-brand);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.15);
+  transform: translateX(-3px);
+}
+
+
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

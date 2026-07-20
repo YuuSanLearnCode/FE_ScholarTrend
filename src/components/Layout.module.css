@@ -156,11 +156,20 @@
   height: 18px;
 }
 
-.notificationDot {
+.notificationBadge {
   position: absolute;
-  top: 0.45rem;
-  right: 0.45rem;
-  box-shadow: var(--shadow-sm);
+  top: -4px;
+  right: -4px;
+  background-color: var(--color-danger, #ef4444);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--color-surface);
+  line-height: 1.2;
 }
 
 .userMenu {

@@ -215,6 +215,49 @@
   gap: 11px;
 }
 
+.notificationButton {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--admin-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--admin-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 160ms ease;
+  margin-right: 6px;
+}
+
+.notificationButton:hover,
+.notificationButtonActive {
+  border-color: var(--admin-accent);
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
+}
+
+.notificationButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background-color: #ef4444;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 0 0 2px #f7f7f5;
+  line-height: 1.2;
+}
+
 .accountText {
   display: flex;
   flex-direction: column;

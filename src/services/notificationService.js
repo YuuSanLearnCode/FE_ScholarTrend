@@ -57,12 +57,13 @@ function getNotificationTargetUrl(item) {
 }
 
 /** Lấy danh sách notifications */
-export async function getNotifications({ isRead, limit = 20 } = {}) {
+export async function getNotifications({ isRead, limit = 20, type } = {}) {
   const normalizedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100)
   const { data: response } = await api.get('/notifications', {
     params: {
       isRead: typeof isRead === 'boolean' ? isRead : undefined,
       limit: normalizedLimit,
+      type: type || undefined,
     },
   })
   const result = unwrapResponse(response, 'Failed to load notifications.')
@@ -81,8 +82,10 @@ export async function getNotifications({ isRead, limit = 20 } = {}) {
 }
 
 /** Đánh dấu 1 notification đã đọc */
-export async function getUnreadNotificationCount() {
-  const { data: response } = await api.get('/notifications/unread-count')
+export async function getUnreadNotificationCount(type) {
+  const { data: response } = await api.get('/notifications/unread-count', {
+    params: { type: type || undefined }
+  })
   const result = unwrapResponse(response, 'Failed to load unread notification count.')
   const rawCount = typeof result === 'object' && result !== null
     ? result.unreadCount ?? result.count ?? result.totalUnread ?? result.unreadNotifications ?? result.totalCount

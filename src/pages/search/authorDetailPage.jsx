@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
 import { getAuthorById, getAuthorByName } from '../../services/authorService'
@@ -26,6 +26,7 @@ function getInitials(name) {
 
 function AuthorDetailPage() {
   const { authorId, authorName } = useParams()
+  const navigate = useNavigate()
   const [author, setAuthor] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -103,6 +104,14 @@ function AuthorDetailPage() {
     }
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/authors')
+  }
+
   if (loading) {
     return (
       <section className={styles.page}>
@@ -132,6 +141,10 @@ function AuthorDetailPage() {
 
   return (
     <section className={styles.page}>
+      <button type="button" className={styles.backButton} onClick={handleBack}>
+        <span aria-hidden="true">&larr;</span>
+        Back
+      </button>
       <header className={styles.hero}>
         <div className={styles.identity}>
           <div className={styles.avatar}>{getInitials(author.name)}</div>

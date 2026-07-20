@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import {
   CartesianGrid,
   Line,
@@ -66,6 +66,7 @@ function AiInferredText({ text = '' }) {
 
 function TopicDetailPage() {
   const { topicId } = useParams()
+  const navigate = useNavigate()
   const [topic, setTopic] = useState(null)
   const [insights, setInsights] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -157,6 +158,14 @@ function TopicDetailPage() {
     }
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/search')
+  }
+
   if (loading) {
     return (
       <section className={styles.page}>
@@ -198,6 +207,10 @@ function TopicDetailPage() {
 
   return (
     <section className={styles.page}>
+      <button type="button" className={styles.backButton} onClick={handleBack}>
+        <span aria-hidden="true">&larr;</span>
+        Back
+      </button>
       <header className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>Research topic</span>

@@ -29,6 +29,9 @@ function formatDate(value) {
 }
 
 function NotificationsPage() {
+  const role = localStorage.getItem('userRole')
+  const isAdmin = role === 'Admin'
+  const [notificationType, setNotificationType] = useState('User')
   const [notifications, setNotifications] = useState([])
   const [settings, setSettings] = useState(null)
   const [filter, setFilter] = useState('all')
@@ -41,6 +44,7 @@ function NotificationsPage() {
   const [settingsError, setSettingsError] = useState('')
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsMessage, setSettingsMessage] = useState('')
+  const [initialLoad, setInitialLoad] = useState(true)
 
   useEffect(() => {
     async function fetchSettings() {
@@ -91,7 +95,6 @@ function NotificationsPage() {
   }
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     async function fetchNotifications() {
       setLoading(true)
       setError('')
@@ -99,6 +102,7 @@ function NotificationsPage() {
         const result = await getNotifications({
           isRead: filter === 'all' ? undefined : filter === 'read',
           limit: NOTIFICATION_FETCH_LIMIT,
+          type: notificationType === 'Admin' ? 'Admin' : 'User'
         })
         setNotifications(result)
       } catch (err) {
@@ -106,11 +110,12 @@ function NotificationsPage() {
         setNotifications([])
       } finally {
         setLoading(false)
+        setInitialLoad(false)
       }
     }
 
     fetchNotifications()
-  }, [filter])
+  }, [filter, notificationType])
 
   const totalPages = Math.max(1, Math.ceil(notifications.length / PAGE_SIZE))
   const currentPage = Math.min(page, totalPages)
@@ -213,24 +218,38 @@ function NotificationsPage() {
         </button>
       </div>
 
+      {isAdmin && (
+        <div className={styles.typeTabs}>
+          <button
+            type="button"
+            className={notificationType === 'User' ? styles.typeTabActive : styles.typeTab}
+            onClick={() => { setNotificationType('User'); setPage(1); }}
+          >
+            Personal
+          </button>
+          <button
+            type="button"
+            className={notificationType === 'Admin' ? styles.typeTabActive : styles.typeTab}
+            onClick={() => { setNotificationType('Admin'); setPage(1); }}
+          >
+            System / Admin
+          </button>
+        </div>
+      )}
+
       <div className={styles.listToolbar}>
         <div className={styles.filterTabs}>
           {['all', 'unread', 'read'].map((value) => (
             <button
               key={value}
               type="button"
-              className={filter === value ? styles.filterTabActive : ''}
+              className={`${styles.filterTab} ${filter === value ? styles.filterTabActive : ''}`}
               onClick={() => handleFilterChange(value)}
             >
               {value[0].toUpperCase() + value.slice(1)}
             </button>
           ))}
         </div>
-        <span className={styles.notificationCount}>
-          {notifications.length > 0
-            ? `${firstResult}-${lastResult} of ${notifications.length}`
-            : '0 notifications'}
-        </span>
       </div>
 
       <section className={styles.settingsPanel}>
@@ -239,7 +258,6 @@ function NotificationsPage() {
             <span>Preferences</span>
             <h2>Notification settings</h2>
           </div>
-          <small>Manage delivery preferences</small>
         </div>
         {settingsLoading ? (
           <Skeleton variant="text" count={3} />
@@ -302,10 +320,10 @@ function NotificationsPage() {
 
       {error && <p className={styles.listError}>{error}</p>}
 
-      {loading && notifications.length === 0 ? (
+      {initialLoad ? (
         <Skeleton variant="card" count={3} />
       ) : (
-        <ul className={styles.list} style={{ opacity: loading ? 0.5 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
+        <ul className={styles.list}>
           {notifications.length === 0 && (
             <li className={styles.listItem}>
               <span className={styles.listItemText}>No notifications.</span>

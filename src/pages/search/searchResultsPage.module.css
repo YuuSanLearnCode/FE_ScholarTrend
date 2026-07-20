@@ -3,6 +3,32 @@
   animation: fadeIn 0.3s ease;
 }
 
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  width: fit-content;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 750;
+  transition: var(--transition);
+}
+
+.backButton:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  transform: translateX(-1px);
+}
+
 .pageHeader {
   display: flex;
   align-items: flex-end;
