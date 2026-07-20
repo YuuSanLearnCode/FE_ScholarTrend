@@ -13,3 +13,8 @@ export const createCheckoutUrl = async (planId, cancelUrl, returnUrl) => {
   });
   return response.data;
 };
+
+export const getPaymentHistory = async () => {
+  const response = await api.get('/payment/history');
+  return response.data;
+};

@@ -189,6 +189,7 @@ function Layout() {
                         </div>
                         <div className={styles.dropdownDivider} />
                         <NavLink to="/profile" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Profile</NavLink>
+                        <NavLink to="/payment/history" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Billing</NavLink>
                         <button type="button" className={styles.dropdownItem} onClick={handleLogout}>Logout</button>
                       </div>
                     </>

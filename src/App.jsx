@@ -24,6 +24,7 @@ import ProfilePage from "./pages/user/profilePage";
 import PublicationReportPage from "./pages/reports/publicationReportPage";
 import SubscriptionPlansPage from "./pages/payment/SubscriptionPlansPage";
 import PaymentResultPage from "./pages/payment/PaymentResultPage";
+import PaymentHistoryPage from "./pages/payment/paymentHistoryPage";
 
 // Admin Pages
 import AdminLayout from "./components/admin/AdminLayout";
@@ -140,6 +141,14 @@ function App() {
           element: (
             <RequireAuth>
               <ProfilePage />
+            </RequireAuth>
+          ),
+        },
+        {
+          path: "payment/history",
+          element: (
+            <RequireAuth>
+              <PaymentHistoryPage />
             </RequireAuth>
           ),
         },
