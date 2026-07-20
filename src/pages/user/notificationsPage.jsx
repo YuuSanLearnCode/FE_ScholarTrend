@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import Pagination from '../../components/Pagination'
 import Skeleton from '../../components/Skeleton'
 import {
   getNotificationSettings,
@@ -9,6 +10,9 @@ import {
   updateNotificationSettings,
 } from '../../services/notificationService'
 import styles from './simpleListPage.module.css'
+
+const PAGE_SIZE = 10
+const NOTIFICATION_FETCH_LIMIT = 100
 
 function formatDate(value) {
   let dateString = value;
@@ -28,7 +32,7 @@ function NotificationsPage() {
   const [notifications, setNotifications] = useState([])
   const [settings, setSettings] = useState(null)
   const [filter, setFilter] = useState('all')
-  const [limit, setLimit] = useState('20')
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [markingId, setMarkingId] = useState(null)
@@ -94,7 +98,7 @@ function NotificationsPage() {
       try {
         const result = await getNotifications({
           isRead: filter === 'all' ? undefined : filter === 'read',
-          limit,
+          limit: NOTIFICATION_FETCH_LIMIT,
         })
         setNotifications(result)
       } catch (err) {
@@ -106,7 +110,42 @@ function NotificationsPage() {
     }
 
     fetchNotifications()
-  }, [filter, limit])
+  }, [filter])
+
+  const totalPages = Math.max(1, Math.ceil(notifications.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const startIndex = (currentPage - 1) * PAGE_SIZE
+  const pageNotifications = useMemo(
+    () => notifications.slice(startIndex, startIndex + PAGE_SIZE),
+    [notifications, startIndex],
+  )
+  const firstResult = notifications.length > 0 ? startIndex + 1 : 0
+  const lastResult = Math.min(startIndex + pageNotifications.length, notifications.length)
+
+  const handleFilterChange = (value) => {
+    setFilter(value)
+    setPage(1)
+  }
+
+  const handlePageChange = (nextPage) => {
+    setPage(nextPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const updateNotificationReadState = (notificationId, notifyHeader = true) => {
+    setNotifications((current) =>
+      filter === 'unread'
+        ? current.filter((item) => item.id !== notificationId)
+        : current.map((item) => (
+          item.id === notificationId
+            ? { ...item, isRead: true, read: true, readAt: new Date().toISOString() }
+            : item
+        )),
+    )
+    if (notifyHeader) {
+      window.dispatchEvent(new Event('notifications-updated'))
+    }
+  }
 
   const handleMarkAsRead = async (notificationId) => {
     if (markingId === notificationId) return
@@ -115,21 +154,24 @@ function NotificationsPage() {
     setError('')
     try {
       await markAsRead(notificationId)
-      setNotifications((current) =>
-        filter === 'unread'
-          ? current.filter((item) => item.id !== notificationId)
-          : current.map((item) => (
-            item.id === notificationId
-              ? { ...item, isRead: true, read: true, readAt: new Date().toISOString() }
-              : item
-          )),
-      )
-      window.dispatchEvent(new Event('notifications-updated'))
+      updateNotificationReadState(notificationId)
     } catch {
       setError('Failed to mark notification as read.')
     } finally {
       setMarkingId(null)
     }
+  }
+
+  const handleOpenNotification = (event, item, isRead) => {
+    event.stopPropagation()
+    if (isRead || markingId === item.id) return
+
+    updateNotificationReadState(item.id, false)
+    markAsRead(item.id)
+      .catch(() => {})
+      .finally(() => {
+        window.dispatchEvent(new Event('notifications-updated'))
+      })
   }
 
   const handleMarkAllAsRead = async () => {
@@ -178,22 +220,17 @@ function NotificationsPage() {
               key={value}
               type="button"
               className={filter === value ? styles.filterTabActive : ''}
-              onClick={() => setFilter(value)}
+              onClick={() => handleFilterChange(value)}
             >
               {value[0].toUpperCase() + value.slice(1)}
             </button>
           ))}
         </div>
-        <select
-          className={styles.limitSelect}
-          value={limit}
-          onChange={(event) => setLimit(event.target.value)}
-          aria-label="Notification limit"
-        >
-          <option value="10">10 latest</option>
-          <option value="20">20 latest</option>
-          <option value="50">50 latest</option>
-        </select>
+        <span className={styles.notificationCount}>
+          {notifications.length > 0
+            ? `${firstResult}-${lastResult} of ${notifications.length}`
+            : '0 notifications'}
+        </span>
       </div>
 
       <section className={styles.settingsPanel}>
@@ -274,8 +311,20 @@ function NotificationsPage() {
               <span className={styles.listItemText}>No notifications.</span>
             </li>
           )}
-          {notifications.map((item) => {
+          {pageNotifications.map((item) => {
             const isRead = item.isRead ?? item.read ?? false
+            const targetUrl = item.targetUrl
+            const notificationBody = (
+              <>
+                <div className={styles.notificationTitle}>
+                  {!isRead && <span className={styles.unreadDot} />}
+                  <strong>{item.title}</strong>
+                  {item.createdAt && <time>{formatDate(item.createdAt)}</time>}
+                </div>
+                <span className={styles.listItemText}>{item.message}</span>
+              </>
+            )
+
             return (
               <li
                 key={item.id}
@@ -284,17 +333,22 @@ function NotificationsPage() {
                 aria-busy={markingId === item.id}
               >
                 <div className={styles.notificationContent}>
-                  <div className={styles.notificationTitle}>
-                    {!isRead && <span className={styles.unreadDot} />}
-                    <strong>{item.title}</strong>
-                    {item.createdAt && <time>{formatDate(item.createdAt)}</time>}
-                  </div>
-                  <span className={styles.listItemText}>{item.message}</span>
-                  {item.targetUrl && (
+                  {targetUrl ? (
+                    <Link
+                      className={styles.notificationMainLink}
+                      to={targetUrl}
+                      onClick={(event) => handleOpenNotification(event, item, isRead)}
+                    >
+                      {notificationBody}
+                    </Link>
+                  ) : (
+                    notificationBody
+                  )}
+                  {targetUrl && (
                     <Link
                       className={styles.notificationLink}
-                      to={item.targetUrl}
-                      onClick={(event) => event.stopPropagation()}
+                      to={targetUrl}
+                      onClick={(event) => handleOpenNotification(event, item, isRead)}
                     >
                       View details
                     </Link>
@@ -304,6 +358,13 @@ function NotificationsPage() {
             )
           })}
         </ul>
+      )}
+      {!loading && notifications.length > PAGE_SIZE && (
+        <Pagination
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </section>
   )

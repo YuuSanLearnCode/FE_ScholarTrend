@@ -112,19 +112,13 @@
   line-height: 1;
 }
 
-.notificationBadge {
-  display: inline-grid;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  place-items: center;
+.notificationDot {
+  display: block;
+  width: 8px;
+  height: 8px;
   border: 2px solid var(--color-surface);
   border-radius: 999px;
   background: var(--color-danger);
-  color: var(--color-on-danger);
-  font-size: 0.62rem;
-  font-weight: 800;
-  line-height: 1;
 }
 
 /* ── Auth Actions ── */
@@ -133,27 +127,6 @@
   align-items: center;
   gap: 0.6rem;
   flex-shrink: 0;
-}
-
-.themeToggle {
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-  flex-shrink: 0;
-}
-
-.themeToggle:hover {
-  border-color: var(--color-border-hover);
-  color: var(--color-text);
-  background: var(--color-surface-hover);
 }
 
 .notificationButton {
@@ -183,10 +156,10 @@
   height: 18px;
 }
 
-.notificationButton .notificationBadge {
+.notificationDot {
   position: absolute;
-  top: -0.35rem;
-  right: -0.35rem;
+  top: 0.45rem;
+  right: 0.45rem;
   box-shadow: var(--shadow-sm);
 }
 
@@ -431,17 +404,6 @@
 
   .navLabel {
     display: none;
-  }
-
-  .link .notificationBadge {
-    position: absolute;
-    top: -0.2rem;
-    right: -0.25rem;
-  }
-
-  .notificationButton .notificationBadge {
-    top: -0.35rem;
-    right: -0.35rem;
   }
 
   .link {

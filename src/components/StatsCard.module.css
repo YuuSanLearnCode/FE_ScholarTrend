@@ -16,18 +16,6 @@
   transition: var(--transition);
 }
 
-.card::before {
-  position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--accent-border);
-  border-radius: 10px;
-  background: var(--accent-bg);
-  content: '';
-}
-
 .card:hover {
   border-color: var(--accent-border);
   box-shadow: var(--shadow-md);
@@ -35,7 +23,6 @@
 }
 
 .label {
-  max-width: calc(100% - 46px);
   margin: 0;
   color: var(--color-text-muted);
   font-size: 0.68rem;
