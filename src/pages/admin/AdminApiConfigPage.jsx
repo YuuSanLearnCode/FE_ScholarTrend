@@ -1442,17 +1442,17 @@ function AdminApiConfigPage() {
                 <span>Choose papers to import into the library.</span>
               </div>
               <div className={styles.approveActions}>
-                <button type="button" onClick={selectAllPapers} disabled={reviewBusy}>
+                <button type="button" onClick={selectAllPapers} disabled={reviewBusy || String(selectedSyncJob.status || "Pending").toLowerCase() !== "pending"}>
                   Select all
                 </button>
-                <button type="button" onClick={clearPaperSelection} disabled={reviewBusy}>
+                <button type="button" onClick={clearPaperSelection} disabled={reviewBusy || String(selectedSyncJob.status || "Pending").toLowerCase() !== "pending"}>
                   Clear
                 </button>
                 <button
                   type="button"
                   className={styles.approveButton}
                   onClick={handleApproveSelectedPapers}
-                  disabled={reviewBusy || selectedPaperIds.length === 0}
+                  disabled={reviewBusy || selectedPaperIds.length === 0 || String(selectedSyncJob.status || "Pending").toLowerCase() !== "pending"}
                 >
                   {approveLoading ? "Approving..." : "Approve selected"}
                 </button>
@@ -1460,7 +1460,7 @@ function AdminApiConfigPage() {
                   type="button"
                   className={styles.rejectButton}
                   onClick={() => setShowRejectConfirm(true)}
-                  disabled={reviewBusy}
+                  disabled={reviewBusy || String(selectedSyncJob.status || "Pending").toLowerCase() !== "pending"}
                 >
                   Reject sync
                 </button>
