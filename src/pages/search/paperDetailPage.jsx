@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { aggregatePaperById, getPaperById, recordView } from '../../services/paperService'
+import { aggregatePaperById, getPaperById, recordView, downloadPaperPdf } from '../../services/paperService'
 import { addBookmark, removeBookmark } from '../../services/bookmarkService'
 import {
   followPaper,
@@ -56,6 +56,33 @@ function PaperDetailPage() {
   const [aggregateData, setAggregateData] = useState(null)
   const [aggregateLoading, setAggregateLoading] = useState(false)
   const [aggregateError, setAggregateError] = useState('')
+  const [downloadLoading, setDownloadLoading] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
+
+  const handleDownloadPdf = async () => {
+    if (!paper?.id || downloadLoading) return
+    setDownloadLoading(true)
+    setDownloadError('')
+    try {
+      const blob = await downloadPaperPdf(paper.id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `paper-${paper.id}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setDownloadError('Sorry, the PDF file for this paper is not available.')
+      } else {
+        setDownloadError(err.response?.data?.message || 'Failed to download PDF. Please try again later.')
+      }
+    } finally {
+      setDownloadLoading(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchPaper() {
@@ -283,13 +310,22 @@ function PaperDetailPage() {
             </a>
           )}
           {pdfUrl && (
-            <a className={styles.pdfButton} href={pdfUrl} target="_blank" rel="noreferrer">
-              Open PDF
+            <a className={styles.secondaryButton} href={pdfUrl} target="_blank" rel="noreferrer">
+              Publisher Link
             </a>
           )}
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={handleDownloadPdf}
+            disabled={downloadLoading}
+          >
+            {downloadLoading ? 'Downloading...' : 'Download PDF'}
+          </button>
         </div>
         {followError && <p className={styles.followError}>{followError}</p>}
         {bookmarkError && <p className={styles.bookmarkError}>{bookmarkError}</p>}
+        {downloadError && <p className={styles.bookmarkError}>{downloadError}</p>}
       </header>
 
       <section className={styles.metrics}>
@@ -444,15 +480,52 @@ function PaperDetailPage() {
       </section>
 
       <div className={styles.contentGrid}>
-        <section className={styles.panel}>
-          <div className={styles.sectionHeading}>
-            <span>Overview</span>
-            <h2>Abstract</h2>
-          </div>
-          <p className={styles.abstractText}>
-            {paper.abstract || 'No abstract is available for this paper.'}
-          </p>
-        </section>
+        <div className={styles.mainContent}>
+          <section className={styles.panel}>
+            <div className={styles.sectionHeading}>
+              <span>Overview</span>
+              <h2>Abstract</h2>
+            </div>
+            <p className={styles.abstractText}>
+              {paper.abstract || 'No abstract is available for this paper.'}
+            </p>
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.sectionHeading}>
+              <span>AI Insights</span>
+              <h2>Paper Analysis (Gaps)</h2>
+            </div>
+            
+            {(!paper.limitations || paper.limitations.length === 0) && (!paper.futureWorks || paper.futureWorks.length === 0) ? (
+              <p className={styles.mutedText}>No gap analysis data available yet.</p>
+            ) : (
+              <div className={styles.gapsContainer}>
+                {paper.limitations && paper.limitations.length > 0 && (
+                  <div className={styles.gapSection}>
+                    <h3>Limitations</h3>
+                    <ul className={styles.gapList}>
+                      {paper.limitations.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {paper.futureWorks && paper.futureWorks.length > 0 && (
+                  <div className={styles.gapSection}>
+                    <h3>Future Works</h3>
+                    <ul className={styles.gapList}>
+                      {paper.futureWorks.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
 
         <aside className={styles.sidebar}>
           <section className={styles.panel}>

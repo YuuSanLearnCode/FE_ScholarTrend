@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getMe, updateProfile, changePassword } from '../../services/authService'
+import { uploadFile } from '../../services/fileService'
 import Skeleton from '../../components/Skeleton'
 import FollowingPage from './followingPage'
 import styles from './profilePage.module.css'
@@ -168,23 +169,19 @@ function ProfilePage() {
 
     setProcessingAvatar(true)
     try {
-      const image = await resizeAvatar(file)
-      const storageKey = getAvatarStorageKey(profile.id)
+      // Gọi API up hình lên Backend B2
+      const uploadedData = await uploadFile(file, 'image')
+      const uploadedUrl = uploadedData.url || uploadedData // Phòng trường hợp BE trả thẳng chuỗi
 
-      if (!storageKey) {
-        throw new Error('Could not identify the current account.')
-      }
-
-      localStorage.setItem(storageKey, image)
-      setAvatar(image)
+      setAvatar(uploadedUrl)
       window.dispatchEvent(
         new CustomEvent('profile-avatar-updated', {
-          detail: { userId: profile.id, image },
+          detail: { userId: profile.id, image: uploadedUrl },
         }),
       )
-      setSuccess('Profile photo updated on this device.')
+      setSuccess('Profile photo uploaded to server.')
     } catch (err) {
-      setError(err.message || 'Failed to process profile image.')
+      setError(err.message || 'Failed to upload profile image.')
     } finally {
       setProcessingAvatar(false)
     }
@@ -340,7 +337,7 @@ function ProfilePage() {
                   accept="image/jpeg,image/png,image/webp"
                   onChange={handleAvatarChange}
                 />
-                <p className={styles.photoHint}>JPG, PNG or WebP, up to 5 MB. Stored on this device.</p>
+                <p className={styles.photoHint}>JPG, PNG or WebP, up to 5 MB. Stored securely on server.</p>
               </div>
             </div>
 

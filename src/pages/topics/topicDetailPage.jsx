@@ -16,7 +16,13 @@ import {
   getFollowedTopics,
   unfollowTopic,
 } from '../../services/followService'
-import { getTopicById, getTopicInsightsDashboard } from '../../services/topicService'
+import {
+  getTopicById,
+  getTopicGapById,
+  getTopicGapEvidences,
+  getTopicGapList,
+  getTopicGaps,
+} from '../../services/topicService'
 import styles from './topicDetailPage.module.css'
 
 function formatPeriod(point) {
@@ -26,6 +32,20 @@ function formatPeriod(point) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat('en').format(value ?? 0)
+}
+
+function formatPercent(value) {
+  const number = Number(value ?? 0)
+  if (Number.isNaN(number)) return '0%'
+
+  return `${number % 1 === 0 ? number.toFixed(0) : number.toFixed(1)}%`
+}
+
+function formatConfidence(value) {
+  const number = Number(value ?? 0)
+  if (Number.isNaN(number)) return '0%'
+
+  return formatPercent(number <= 1 ? number * 100 : number)
 }
 
 function formatDateTime(value) {
@@ -68,10 +88,19 @@ function TopicDetailPage() {
   const { topicId } = useParams()
   const navigate = useNavigate()
   const [topic, setTopic] = useState(null)
-  const [insights, setInsights] = useState(null)
+  const [gapDashboard, setGapDashboard] = useState(null)
+  const [gapList, setGapList] = useState(null)
+  const [selectedGapDetail, setSelectedGapDetail] = useState(null)
+  const [selectedGapEvidences, setSelectedGapEvidences] = useState(null)
+  const [selectedGapId, setSelectedGapId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [insightsError, setInsightsError] = useState('')
+  const [gapError, setGapError] = useState('')
+  const [gapListError, setGapListError] = useState('')
+  const [gapDetailError, setGapDetailError] = useState('')
+  const [gapEvidenceError, setGapEvidenceError] = useState('')
+  const [gapDetailLoading, setGapDetailLoading] = useState(false)
+  const [gapEvidenceLoading, setGapEvidenceLoading] = useState(false)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [followError, setFollowError] = useState('')
@@ -80,15 +109,23 @@ function TopicDetailPage() {
     async function fetchTopic() {
       setLoading(true)
       setError('')
-      setInsights(null)
-      setInsightsError('')
+      setGapDashboard(null)
+      setGapList(null)
+      setSelectedGapDetail(null)
+      setSelectedGapEvidences(null)
+      setSelectedGapId(null)
+      setGapError('')
+      setGapListError('')
+      setGapDetailError('')
+      setGapEvidenceError('')
       setFollowError('')
       setIsFollowing(false)
       try {
         const hasToken = Boolean(localStorage.getItem('token'))
-        const [topicResponse, insightsResponse] = await Promise.allSettled([
+        const [topicResponse, gapsResponse, gapListResponse] = await Promise.allSettled([
           getTopicById(topicId),
-          getTopicInsightsDashboard(topicId),
+          getTopicGaps(topicId),
+          getTopicGapList(topicId),
         ])
 
         if (topicResponse.status === 'rejected') {
@@ -98,14 +135,25 @@ function TopicDetailPage() {
         const topicResult = topicResponse.value
         setTopic(topicResult)
 
-        if (insightsResponse.status === 'fulfilled') {
-          setInsights(insightsResponse.value)
+        if (gapsResponse.status === 'fulfilled') {
+          setGapDashboard(gapsResponse.value)
         } else {
-          setInsights(null)
-          setInsightsError(
-            insightsResponse.reason?.response?.data?.message ||
-            insightsResponse.reason?.message ||
-            'Could not load topic insights.',
+          setGapDashboard(null)
+          setGapError(
+            gapsResponse.reason?.response?.data?.message ||
+            gapsResponse.reason?.message ||
+            'Could not load topic gap dashboard.',
+          )
+        }
+
+        if (gapListResponse.status === 'fulfilled') {
+          setGapList(gapListResponse.value)
+        } else {
+          setGapList(null)
+          setGapListError(
+            gapListResponse.reason?.response?.data?.message ||
+            gapListResponse.reason?.message ||
+            'Could not load topic gap list.',
           )
         }
 
@@ -127,7 +175,11 @@ function TopicDetailPage() {
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load topic details.')
         setTopic(null)
-        setInsights(null)
+        setGapDashboard(null)
+        setGapList(null)
+        setSelectedGapDetail(null)
+        setSelectedGapEvidences(null)
+        setSelectedGapId(null)
       } finally {
         setLoading(false)
       }
@@ -156,6 +208,64 @@ function TopicDetailPage() {
     } finally {
       setFollowLoading(false)
     }
+  }
+
+  const handleGapDetailOpen = async (gap) => {
+    if (!gap?.id) {
+      setGapDetailError('This gap does not have a valid id.')
+      return
+    }
+
+    setSelectedGapId(gap.id)
+    setSelectedGapDetail(gap)
+    setSelectedGapEvidences(Array.isArray(gap.evidences) ? gap.evidences : [])
+    setGapDetailError('')
+    setGapEvidenceError('')
+    setGapDetailLoading(true)
+    setGapEvidenceLoading(true)
+
+    try {
+      const [detailResponse, evidenceResponse] = await Promise.allSettled([
+        getTopicGapById(gap.id),
+        getTopicGapEvidences(gap.id),
+      ])
+
+      if (detailResponse.status === 'fulfilled') {
+        setSelectedGapDetail(detailResponse.value)
+      } else {
+        setGapDetailError(
+          detailResponse.reason?.response?.data?.message ||
+          detailResponse.reason?.message ||
+          'Could not load gap details.',
+        )
+      }
+
+      if (evidenceResponse.status === 'fulfilled') {
+        setSelectedGapEvidences(evidenceResponse.value)
+      } else {
+        if (detailResponse.status === 'fulfilled') {
+          setSelectedGapEvidences(detailResponse.value.evidences)
+        }
+        setGapEvidenceError(
+          evidenceResponse.reason?.response?.data?.message ||
+          evidenceResponse.reason?.message ||
+          'Could not load gap evidences.',
+        )
+      }
+    } finally {
+      setGapDetailLoading(false)
+      setGapEvidenceLoading(false)
+    }
+  }
+
+  const handleGapDetailClose = () => {
+    setSelectedGapId(null)
+    setSelectedGapDetail(null)
+    setSelectedGapEvidences(null)
+    setGapDetailError('')
+    setGapEvidenceError('')
+    setGapDetailLoading(false)
+    setGapEvidenceLoading(false)
   }
 
   const handleBack = () => {
@@ -200,10 +310,16 @@ function TopicDetailPage() {
     ? trendData.reduce((sum, point) => sum + (point.growthRate ?? 0), 0) / trendData.length
     : 0
   const peakScore = Math.max(0, ...trendData.map((point) => point.trendingScore ?? 0))
-  const insightTimeline = insights?.timeline ?? []
-  const insightOpportunities = insights?.opportunities ?? []
-  const topMethods = insights?.topMethods ?? []
-  const topDatasets = insights?.topDatasets ?? []
+  const hasGapList = Array.isArray(gapList)
+  const topicGapItems = hasGapList ? gapList : gapDashboard?.gaps ?? []
+  const gapCoverage = gapDashboard?.coverage ?? null
+  const gapPatterns = gapDashboard?.patterns ?? null
+  const gapTimeline = gapDashboard?.timeline?.timeline ?? []
+  const hasGapContent = gapDashboard || hasGapList
+  const selectedPatterns = selectedGapDetail?.supportingPatterns ?? null
+  const selectedTrend = selectedGapDetail?.trendInfo ?? null
+  const selectedRelatedPapers = selectedGapDetail?.topRelatedPapers ?? []
+  const selectedEvidences = selectedGapEvidences ?? selectedGapDetail?.evidences ?? []
 
   return (
     <section className={styles.page}>
@@ -262,98 +378,195 @@ function TopicDetailPage() {
         </article>
       </div>
 
-      <article className={`${styles.panel} ${styles.insightsPanel}`}>
+      <article className={`${styles.panel} ${styles.gapPanel}`}>
         <div className={styles.panelHeader}>
           <div>
-            <span className={styles.eyebrow}>AI topic insights</span>
-            <h2>Research intelligence dashboard</h2>
+            <span className={styles.eyebrow}>Research gaps</span>
+            <h2>Generated gap analysis</h2>
           </div>
           <span className={styles.analyzedAt}>
-            Last analyzed: {formatDateTime(insights?.lastAnalyzedAt)}
+            Generated: {formatDateTime(gapDashboard?.generatedAt)}
           </span>
         </div>
 
-        {insightsError && <p className={styles.insightsError}>{insightsError}</p>}
+        {gapError && <p className={styles.insightsError}>{gapError}</p>}
+        {gapListError && <p className={styles.insightsError}>{gapListError}</p>}
 
-        {insights ? (
+        {hasGapContent ? (
           <>
-            <div className={styles.insightTagsGrid}>
+            {gapCoverage && (
+              <div className={styles.coverageGrid}>
+                <article>
+                  <span>Total papers</span>
+                  <strong>{formatNumber(gapCoverage.totalPapers)}</strong>
+                </article>
+                <article>
+                  <span>PDF analyzed</span>
+                  <strong>{formatNumber(gapCoverage.pdfAnalyzedPapers)}</strong>
+                </article>
+                <article>
+                  <span>Abstract analyzed</span>
+                  <strong>{formatNumber(gapCoverage.abstractAnalyzedPapers)}</strong>
+                </article>
+                <article>
+                  <span>Coverage</span>
+                  <strong>{formatPercent(gapCoverage.coveragePercentage)}</strong>
+                </article>
+                <article>
+                  <span>Full text coverage</span>
+                  <strong>{formatPercent(gapCoverage.fullTextCoveragePercentage)}</strong>
+                </article>
+                <article>
+                  <span>Ignored papers</span>
+                  <strong>{formatNumber(gapCoverage.ignoredPapers)}</strong>
+                </article>
+              </div>
+            )}
+
+            <section className={styles.gapSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <span className={styles.eyebrow}>Generated gaps</span>
+                  <h2>Research opportunities</h2>
+                </div>
+                <span>{topicGapItems.length} gaps</span>
+              </div>
+
+              {topicGapItems.length > 0 ? (
+                <div className={styles.gapList}>
+                  {topicGapItems.map((gap, index) => (
+                    <article className={styles.gapCard} key={gap.id ? gap.id : `${gap.title}-${index}`}>
+                      <div className={styles.gapCardTop}>
+                        <div>
+                          <h3><AiInferredText text={gap.title || 'Untitled gap'} /></h3>
+                          <p><AiInferredText text={gap.description || 'No description available.'} /></p>
+                        </div>
+                        <span>{gap.confidenceLevel || 'Unknown'}</span>
+                      </div>
+
+                      <div className={styles.gapMeta}>
+                        <span>{gap.gapType || 'Gap'}</span>
+                        <span>{formatNumber(gap.evidenceCount)} evidences</span>
+                        <span>{formatConfidence(gap.confidence)} confidence</span>
+                      </div>
+
+                      {gap.suggestedDirection && (
+                        <div className={styles.directionBox}>
+                          <strong>Suggested direction</strong>
+                          <p><AiInferredText text={gap.suggestedDirection} /></p>
+                        </div>
+                      )}
+
+                      {Array.isArray(gap.evidences) && gap.evidences.length > 0 && (
+                        <div className={styles.gapEvidenceList}>
+                          {gap.evidences.slice(0, 3).map((evidence, evIdx) => (
+                            <Link
+                              key={evidence.id ? evidence.id : `${gap.id}-${evidence.paperId}-${evIdx}`}
+                              to={`/papers/${evidence.paperId}`}
+                            >
+                              <strong>{evidence.paperTitle || `Paper #${evidence.paperId}`}</strong>
+                              <span>
+                                {[evidence.authors, evidence.year].filter(Boolean).join(' - ') || 'Unknown source'}
+                              </span>
+                              <p>
+                                <AiInferredText text={evidence.evidenceSentence || 'View supporting evidence.'} />
+                              </p>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className={styles.gapActions}>
+                        <button
+                          type="button"
+                          onClick={() => handleGapDetailOpen(gap)}
+                          disabled={!gap.id || (selectedGapId === gap.id && (gapDetailLoading || gapEvidenceLoading))}
+                        >
+                          {selectedGapId === gap.id && (gapDetailLoading || gapEvidenceLoading)
+                            ? 'Loading details...'
+                            : 'View gap details'}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.emptyInline}>No generated gaps are available for this topic.</p>
+              )}
+            </section>
+
+            <div className={styles.gapInsightGrid}>
               <section>
                 <h3>Top methods</h3>
-                <div className={styles.insightTags}>
-                  {topMethods.length > 0 ? (
-                    topMethods.map((method) => <span key={method}><AiInferredText text={method} /></span>)
+                <div className={styles.compactList}>
+                  {(gapPatterns?.methods ?? []).length > 0 ? (
+                    gapPatterns.methods.slice(0, 5).map((item) => (
+                      <span key={`${item.methodName}-${item.year}`}>
+                        <strong><AiInferredText text={item.methodName || 'Unknown method'} /></strong>
+                        <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                      </span>
+                    ))
                   ) : (
-                    <span>No methods found</span>
+                    <p>No methods mined.</p>
                   )}
                 </div>
               </section>
               <section>
-                <h3>Top datasets</h3>
-                <div className={styles.insightTags}>
-                  {topDatasets.length > 0 ? (
-                    topDatasets.map((dataset) => <span key={dataset}><AiInferredText text={dataset} /></span>)
+                <h3>Datasets</h3>
+                <div className={styles.compactList}>
+                  {(gapPatterns?.datasets ?? []).length > 0 ? (
+                    gapPatterns.datasets.slice(0, 5).map((item) => (
+                      <span key={`${item.datasetName}-${item.year}`}>
+                        <strong><AiInferredText text={item.datasetName || 'Unknown dataset'} /></strong>
+                        <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                      </span>
+                    ))
                   ) : (
-                    <span>No datasets found</span>
+                    <p>No datasets mined.</p>
+                  )}
+                </div>
+              </section>
+              <section>
+                <h3>Limitations</h3>
+                <div className={styles.compactList}>
+                  {(gapPatterns?.limitations ?? []).length > 0 ? (
+                    gapPatterns.limitations.slice(0, 5).map((item) => (
+                      <span key={`${item.limitationText}-${item.year}`}>
+                        <strong><AiInferredText text={item.limitationText || 'Unknown limitation'} /></strong>
+                        <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                      </span>
+                    ))
+                  ) : (
+                    <p>No limitations mined.</p>
                   )}
                 </div>
               </section>
             </div>
 
-            <div className={styles.insightsGrid}>
-              <section className={styles.timelineBlock}>
-                <h3>Timeline</h3>
-                {insightTimeline.length > 0 ? (
-                  <ol className={styles.timelineList}>
-                    {insightTimeline.map((item) => (
-                      <li key={`${item.year}-${item.achievement}`}>
-                        <div>
-                          <strong>{item.year || 'N/A'}</strong>
-                          <span>{formatNumber(item.paperCount)} papers</span>
-                        </div>
-                        <section>
-                          <h4><AiInferredText text={item.achievement || 'Research milestone'} /></h4>
-                          <p><AiInferredText text={item.summary || 'No summary available.'} /></p>
-                        </section>
-                      </li>
-                    ))}
-                  </ol>
-                ) : (
-                  <p className={styles.emptyInline}>No timeline data available.</p>
-                )}
+            {gapTimeline.length > 0 && (
+              <section className={styles.gapTimelinePanel}>
+                <h3>Gap timeline</h3>
+                <div className={styles.gapTimelineList}>
+                  {gapTimeline.map((item) => (
+                    <article key={`${item.year}-${item.gapTitle}`}>
+                      <strong>{item.year || 'N/A'}</strong>
+                      <div>
+                        <h4><AiInferredText text={item.gapTitle || 'Untitled gap'} /></h4>
+                        <p>
+                          {item.gapType || 'Gap'} - {formatNumber(item.paperCount)} papers - {item.trend || 'stable'}
+                        </p>
+                      </div>
+                      <span className={item.isResolved ? styles.resolvedBadge : styles.openBadge}>
+                        {item.isResolved ? 'Resolved' : 'Open'}
+                      </span>
+                    </article>
+                  ))}
+                </div>
               </section>
-
-              <section className={styles.opportunityBlock}>
-                <h3>Opportunities</h3>
-                {insightOpportunities.length > 0 ? (
-                  <div className={styles.opportunityList}>
-                    {insightOpportunities.map((opportunity) => (
-                      <article key={opportunity.title || opportunity.description}>
-                        <h4><AiInferredText text={opportunity.title || 'Research opportunity'} /></h4>
-                        <p><AiInferredText text={opportunity.description || 'No description available.'} /></p>
-                        {Array.isArray(opportunity.evidences) && opportunity.evidences.length > 0 && (
-                          <div className={styles.evidenceList}>
-                            {opportunity.evidences.map((evidence) => (
-                              <Link
-                                key={`${evidence.paperId}-${evidence.excerpt}`}
-                                to={`/papers/${evidence.paperId}`}
-                              >
-                                Paper #{evidence.paperId}: {evidence.excerpt || 'View evidence'}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.emptyInline}>No opportunities available.</p>
-                )}
-              </section>
-            </div>
+            )}
           </>
         ) : (
-          <p className={styles.emptyInline}>No insights dashboard is available for this topic.</p>
+          <p className={styles.emptyInline}>No gap data is available for this topic.</p>
         )}
       </article>
 
@@ -392,6 +605,186 @@ function TopicDetailPage() {
         </div>
         <SearchResultsList papers={topic.recentPapers} />
       </section>
+
+      {selectedGapId && (
+        <div className={styles.modalOverlay} role="presentation" onClick={handleGapDetailClose}>
+          <article
+            className={styles.gapDetailModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gap-detail-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className={styles.gapDetailHeader}>
+              <div>
+                <span className={styles.eyebrow}>Gap details</span>
+                <h2 id="gap-detail-title">
+                  <AiInferredText text={selectedGapDetail?.title || 'Gap details'} />
+                </h2>
+                <p>
+                  <AiInferredText text={selectedGapDetail?.description || 'No description available.'} />
+                </p>
+              </div>
+              <button type="button" className={styles.modalCloseButton} onClick={handleGapDetailClose}>
+                Close
+              </button>
+            </header>
+
+            {gapDetailLoading && <p className={styles.loadingInline}>Loading gap details...</p>}
+            {gapEvidenceLoading && <p className={styles.loadingInline}>Loading gap evidences...</p>}
+            {gapDetailError && <p className={styles.insightsError}>{gapDetailError}</p>}
+            {gapEvidenceError && <p className={styles.insightsError}>{gapEvidenceError}</p>}
+
+            {selectedGapDetail && (
+              <>
+                <div className={styles.gapMeta}>
+                  <span>{selectedGapDetail.gapType || 'Gap'}</span>
+                  <span>{formatNumber(selectedGapDetail.evidenceCount)} evidences</span>
+                  <span>{formatConfidence(selectedGapDetail.confidence)} confidence</span>
+                  <span>{selectedGapDetail.confidenceLevel || 'Unknown'}</span>
+                </div>
+
+                {selectedGapDetail.suggestedDirection && (
+                  <div className={styles.directionBox}>
+                    <strong>Suggested direction</strong>
+                    <p><AiInferredText text={selectedGapDetail.suggestedDirection} /></p>
+                  </div>
+                )}
+
+                <div className={styles.gapDetailGrid}>
+                  <section className={styles.detailBlock}>
+                    <h3>Trend info</h3>
+                    {selectedTrend ? (
+                      <dl className={styles.detailStats}>
+                        <div>
+                          <dt>Year</dt>
+                          <dd>{selectedTrend.year || 'N/A'}</dd>
+                        </div>
+                        <div>
+                          <dt>Status</dt>
+                          <dd>{selectedTrend.isResolved ? 'Resolved' : 'Open'}</dd>
+                        </div>
+                        <div>
+                          <dt>Papers</dt>
+                          <dd>{formatNumber(selectedTrend.paperCount)}</dd>
+                        </div>
+                        <div>
+                          <dt>Growth</dt>
+                          <dd>{formatPercent(selectedTrend.growthRate)}</dd>
+                        </div>
+                      </dl>
+                    ) : (
+                      <p className={styles.emptyInline}>No trend info available.</p>
+                    )}
+                  </section>
+
+                  <section className={styles.detailBlock}>
+                    <h3>Top related papers</h3>
+                    {selectedRelatedPapers.length > 0 ? (
+                      <div className={styles.relatedPaperList}>
+                        {selectedRelatedPapers.map((paper) => (
+                          <Link key={paper.paperId || paper.title} to={`/papers/${paper.paperId}`}>
+                            <strong>{paper.title || `Paper #${paper.paperId}`}</strong>
+                            <span>
+                              {[paper.authors, paper.year, `${formatNumber(paper.citationCount)} citations`]
+                                .filter(Boolean)
+                                .join(' - ')}
+                            </span>
+                            <p><AiInferredText text={paper.contribution || 'View related paper.'} /></p>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.emptyInline}>No related papers available.</p>
+                    )}
+                  </section>
+                </div>
+
+                <section className={styles.detailBlock}>
+                  <h3>Evidence</h3>
+                  {selectedEvidences.length > 0 ? (
+                    <div className={styles.gapEvidenceList}>
+                      {selectedEvidences.map((evidence) => (
+                        <Link
+                          key={evidence.id || `${selectedGapDetail.id}-${evidence.paperId}`}
+                          to={`/papers/${evidence.paperId}`}
+                        >
+                          <strong>{evidence.paperTitle || `Paper #${evidence.paperId}`}</strong>
+                          <span>
+                            {[evidence.authors, evidence.year, evidence.evidenceType, evidence.sectionSource]
+                              .filter(Boolean)
+                              .join(' - ')}
+                          </span>
+                          <p>
+                            <AiInferredText text={evidence.evidenceSentence || 'View supporting evidence.'} />
+                          </p>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.emptyInline}>No evidence available.</p>
+                  )}
+                </section>
+
+                <section className={styles.detailBlock}>
+                  <h3>Supporting patterns</h3>
+                  {selectedPatterns ? (
+                    <div className={styles.patternColumns}>
+                      <div>
+                        <h4>Methods</h4>
+                        <div className={styles.compactList}>
+                          {(selectedPatterns.methods ?? []).length > 0 ? (
+                            selectedPatterns.methods.slice(0, 4).map((item) => (
+                              <span key={`${item.methodName}-${item.year}`}>
+                                <strong><AiInferredText text={item.methodName || 'Unknown method'} /></strong>
+                                <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                              </span>
+                            ))
+                          ) : (
+                            <p>No methods found.</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h4>Datasets</h4>
+                        <div className={styles.compactList}>
+                          {(selectedPatterns.datasets ?? []).length > 0 ? (
+                            selectedPatterns.datasets.slice(0, 4).map((item) => (
+                              <span key={`${item.datasetName}-${item.year}`}>
+                                <strong><AiInferredText text={item.datasetName || 'Unknown dataset'} /></strong>
+                                <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                              </span>
+                            ))
+                          ) : (
+                            <p>No datasets found.</p>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h4>Limitations</h4>
+                        <div className={styles.compactList}>
+                          {(selectedPatterns.limitations ?? []).length > 0 ? (
+                            selectedPatterns.limitations.slice(0, 4).map((item) => (
+                              <span key={`${item.limitationText}-${item.year}`}>
+                                <strong><AiInferredText text={item.limitationText || 'Unknown limitation'} /></strong>
+                                <small>{formatNumber(item.paperCount)} papers - {item.trend || 'stable'}</small>
+                              </span>
+                            ))
+                          ) : (
+                            <p>No limitations found.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className={styles.emptyInline}>No supporting patterns available.</p>
+                  )}
+                </section>
+              </>
+            )}
+          </article>
+        </div>
+      )}
     </section>
   )
 }

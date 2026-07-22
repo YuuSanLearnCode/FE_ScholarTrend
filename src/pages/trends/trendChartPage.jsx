@@ -31,6 +31,10 @@ import Skeleton from '../../components/Skeleton'
 import styles from './trendChartPage.module.css'
 
 const COLORS = ['#1e40af', '#0891b2', '#16a34a', '#d97706', '#7c3aed', '#db2777']
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
 const EMPTY_DASHBOARD = {
   topKeywords: [],
   topTopics: [],
@@ -380,8 +384,8 @@ function TrendChartPage() {
               onChange={handleFilterChange('monthFrom')}
             >
               <option value="">Any month</option>
-              {Array.from({ length: 12 }, (_, index) => (
-                <option key={index + 1} value={index + 1}>{index + 1}</option>
+              {MONTHS.map((month, index) => (
+                <option key={index + 1} value={index + 1}>{month}</option>
               ))}
             </select>
           </div>
@@ -394,8 +398,8 @@ function TrendChartPage() {
               onChange={handleFilterChange('monthTo')}
             >
               <option value="">Any month</option>
-              {Array.from({ length: 12 }, (_, index) => (
-                <option key={index + 1} value={index + 1}>{index + 1}</option>
+              {MONTHS.map((month, index) => (
+                <option key={index + 1} value={index + 1}>{month}</option>
               ))}
             </select>
           </div>

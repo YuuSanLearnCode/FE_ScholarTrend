@@ -119,7 +119,6 @@ function TopicsPage() {
                   </div>
                   <div>
                     <h2>{topic.name}</h2>
-                    <span className={styles.topicId}>ID: {topic.id}</span>
                   </div>
                 </div>
                 {topic.description && <p>{topic.description}</p>}
@@ -134,7 +133,7 @@ function TopicsPage() {
 
           {totalPages > 1 && (
             <Pagination
-              currentPage={currentPage}
+              page={currentPage}
               totalPages={totalPages}
               onPageChange={setPage}
             />

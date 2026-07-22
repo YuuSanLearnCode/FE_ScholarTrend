@@ -165,6 +165,460 @@
   font-size: 0.76rem;
 }
 
+.gapPanel {
+  background: linear-gradient(135deg, #ffffff, #f8fbff);
+}
+
+.coverageGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.coverageGrid article {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.coverageGrid span,
+.coverageGrid strong {
+  display: block;
+}
+
+.coverageGrid span {
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.coverageGrid strong {
+  margin-top: 0.25rem;
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.gapSection {
+  margin-top: 1rem;
+}
+
+.gapList {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.gapCard {
+  padding: 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 13px;
+  background: #f8fbff;
+}
+
+.gapCardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.gapCardTop h3 {
+  margin: 0 0 0.35rem;
+  color: var(--color-text);
+  font-size: 0.98rem;
+}
+
+.gapCardTop p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.gapCardTop > span {
+  flex: 0 0 auto;
+  height: fit-content;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.gapMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 0.8rem;
+}
+
+.gapMeta span {
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.gapActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.85rem;
+}
+
+.gapActions button {
+  padding: 0.52rem 0.78rem;
+  border: 1px solid var(--color-brand-border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--color-brand);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.gapActions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.directionBox {
+  margin-bottom: 0.8rem;
+  padding: 0.75rem;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+}
+
+.directionBox strong {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #92400e;
+  font-size: 0.72rem;
+}
+
+.directionBox p {
+  margin: 0;
+  color: #78350f;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.gapEvidenceList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.gapEvidenceList a {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: inherit;
+}
+
+.gapEvidenceList strong {
+  color: var(--color-brand);
+  font-size: 0.76rem;
+}
+
+.gapEvidenceList span {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.gapEvidenceList p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.gapInsightGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.gapInsightGrid section {
+  min-width: 0;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.gapInsightGrid h3 {
+  margin: 0 0 0.75rem;
+  color: var(--color-text);
+  font-size: 0.86rem;
+}
+
+.compactList {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.compactList span {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.6rem;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.compactList strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.73rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compactList small,
+.compactList p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+}
+
+.gapTimelinePanel {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.gapTimelinePanel h3 {
+  margin: 0 0 0.75rem;
+  color: var(--color-text);
+  font-size: 0.86rem;
+}
+
+.gapTimelineList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.gapTimelineList article {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.gapTimelineList article > strong {
+  color: var(--color-brand);
+  font-size: 0.95rem;
+}
+
+.gapTimelineList h4 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.76rem;
+}
+
+.gapTimelineList p {
+  margin: 0.2rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.openBadge,
+.resolvedBadge {
+  padding: 0.3rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.openBadge {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.resolvedBadge {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  padding: 1.25rem;
+  background: rgba(15, 23, 42, 0.52);
+  backdrop-filter: blur(8px);
+}
+
+.gapDetailModal {
+  width: min(980px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid rgba(191, 219, 254, 0.9);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(30, 64, 175, 0.1), transparent 35%),
+    #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+}
+
+.gapDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.gapDetailHeader h2 {
+  margin: 0.2rem 0 0.45rem;
+  color: var(--color-text);
+  font-size: clamp(1.25rem, 3vw, 1.8rem);
+  letter-spacing: -0.03em;
+}
+
+.gapDetailHeader p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.65;
+}
+
+.modalCloseButton {
+  align-self: flex-start;
+  padding: 0.52rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loadingInline {
+  margin: 0 0 1rem;
+  color: var(--color-brand);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.gapDetailGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.detailBlock {
+  min-width: 0;
+  margin-top: 0.85rem;
+  padding: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.gapDetailGrid .detailBlock {
+  margin-top: 0;
+}
+
+.detailBlock h3 {
+  margin: 0 0 0.75rem;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.detailStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.detailStats div {
+  padding: 0.7rem;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.detailStats dt {
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.detailStats dd {
+  margin: 0.2rem 0 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.relatedPaperList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.relatedPaperList a {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid #dbeafe;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: inherit;
+}
+
+.relatedPaperList strong {
+  color: var(--color-brand);
+  font-size: 0.76rem;
+}
+
+.relatedPaperList span {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+}
+
+.relatedPaperList p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.patternColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.patternColumns h4 {
+  margin: 0 0 0.55rem;
+  color: var(--color-text);
+  font-size: 0.78rem;
+}
+
 .insightTagsGrid,
 .insightsGrid {
   display: grid;
@@ -410,6 +864,19 @@
 }
 
 @media (max-width: 800px) {
+  .coverageGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gapInsightGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .gapDetailGrid,
+  .patternColumns {
+    grid-template-columns: 1fr;
+  }
+
   .insightTagsGrid,
   .insightsGrid,
   .statsGrid {
@@ -443,8 +910,30 @@
   }
 
   .insightTagsGrid,
+  .coverageGrid,
+  .gapTimelineList article,
   .timelineList li {
     grid-template-columns: 1fr;
+  }
+
+  .gapCardTop {
+    flex-direction: column;
+  }
+
+  .gapActions {
+    justify-content: stretch;
+  }
+
+  .gapActions button {
+    width: 100%;
+  }
+
+  .gapDetailHeader {
+    flex-direction: column;
+  }
+
+  .modalCloseButton {
+    width: 100%;
   }
 
   .analyzedAt {

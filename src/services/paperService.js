@@ -79,6 +79,8 @@ function normalizePaperDetail(paper) {
     citationCount: paper.citationCount ?? 0,
     viewCount: paper.viewCount ?? 0,
     isBookmarked: Boolean(paper.isBookmarked),
+    limitations: Array.isArray(paper.limitations) ? paper.limitations : [],
+    futureWorks: Array.isArray(paper.futureWorks) ? paper.futureWorks : [],
   }
 }
 
@@ -273,4 +275,22 @@ export async function getGlobalPaperAggregate() {
     const { data: response } = await api.get('/papers/aggregate')
     return normalizeAggregateResult(unwrapResponse(response, 'Failed to aggregate global paper metadata.'))
   })
+}
+
+/**
+ * Tải file PDF của bài báo
+ * @param {number} id
+ * @returns {Blob}
+ */
+export async function downloadPaperPdf(id) {
+  const normalizedId = Number(id)
+  if (!Number.isInteger(normalizedId) || normalizedId <= 0) {
+    throw new Error('Invalid paper id.')
+  }
+
+  const response = await api.get(`/papers/${normalizedId}/pdf`, {
+    responseType: 'blob'
+  })
+  
+  return response.data
 }

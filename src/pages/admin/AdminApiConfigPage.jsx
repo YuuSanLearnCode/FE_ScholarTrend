@@ -333,6 +333,10 @@ function AdminApiConfigPage() {
     try {
       const result = await getSyncStatusBySource(nextSourceName);
       setSourceStatusDetail(result || null);
+      
+      setTimeout(() => {
+        document.getElementById("live-sync-status")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     } catch (error) {
       setSourceStatusDetail(null);
       setSourceStatusError(
@@ -461,6 +465,13 @@ function AdminApiConfigPage() {
     setTriggerError("");
     setTriggerResult(null);
 
+    // Bắt đầu cào dữ liệu, trong lúc đó liên tục kiểm tra trạng thái khóa mỗi 2 giây
+    // và kiểm tra ngay lập tức sau 300ms để bắt được trạng thái Locked
+    setTimeout(() => refreshSyncStatus(), 300);
+    const pollId = setInterval(() => {
+      refreshSyncStatus();
+    }, 2000);
+
     try {
       const result = await triggerAdminSync({
         sourceName,
@@ -468,17 +479,20 @@ function AdminApiConfigPage() {
         searchQuery,
       });
 
+      clearInterval(pollId);
       setTriggerResult(result || null);
       refreshSyncStatus();
       refreshPendingSync();
       refreshScheduleHistory();
     } catch (error) {
+      clearInterval(pollId);
       setTriggerError(
         error.response?.data?.message ||
           error.message ||
           "Could not trigger sync.",
       );
     } finally {
+      clearInterval(pollId);
       setTriggerLoading(false);
     }
   };
@@ -1132,7 +1146,7 @@ function AdminApiConfigPage() {
         )}
       </article>
 
-      <article className={styles.routesPanel}>
+      <article className={styles.routesPanel} id="live-sync-status">
         <div className={styles.syncPanelHeader}>
           <div>
             <span className={styles.kicker}>Synchronization</span>
@@ -1282,39 +1296,7 @@ function AdminApiConfigPage() {
                 </div>
               </div>
 
-              <div className={styles.statusSection}>
-                <h4>Recent syncs</h4>
-                <div className={styles.statusList}>
-                  {recentStatusSyncs.length > 0 ? (
-                    recentStatusSyncs.map((sync) => (
-                      <article
-                        className={styles.recentStatusCard}
-                        key={sync.id || `${sync.source}-${sync.startedAt}`}
-                      >
-                        <div className={styles.lockTop}>
-                          <strong>{sync.source || "Unknown source"}</strong>
-                          <em>{sync.status || "Unknown"}</em>
-                        </div>
-                        <div className={styles.syncJobStats}>
-                          <span><strong>{formatNumber(sync.papersFetched)}</strong>Fetched</span>
-                          <span><strong>{formatNumber(sync.papersAdded)}</strong>Added</span>
-                          <span><strong>{formatNumber(sync.papersUpdated)}</strong>Updated</span>
-                        </div>
-                        <small>
-                          {formatDate(sync.startedAt)} - {formatDate(sync.completedAt)}
-                        </small>
-                        {sync.errorMessage && (
-                          <div className={styles.syncLogMessage}>
-                            {sync.errorMessage}
-                          </div>
-                        )}
-                      </article>
-                    ))
-                  ) : (
-                    <div className={styles.statusEmpty}>No recent syncs reported.</div>
-                  )}
-                </div>
-              </div>
+
             </div>
           </>
         ) : (
