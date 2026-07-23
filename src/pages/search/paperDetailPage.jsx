@@ -7,6 +7,7 @@ import {
   getFollowedPapers,
   unfollowPaper,
 } from '../../services/followService'
+import { downloadFile } from '../../services/fileService'
 import Skeleton from '../../components/Skeleton'
 import styles from './paperDetailPage.module.css'
 
@@ -202,6 +203,21 @@ function PaperDetailPage() {
     navigate('/search')
   }
 
+  const handleDownloadCommunityPdf = async (fileId, fileName) => {
+    try {
+      const blobData = await downloadFile(fileId)
+      const url = window.URL.createObjectURL(new Blob([blobData]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', fileName || 'download.pdf')
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+    } catch (err) {
+      setDownloadError('Failed to download the community PDF.')
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.detailPage}>
@@ -323,6 +339,37 @@ function PaperDetailPage() {
             {downloadLoading ? 'Downloading...' : 'Download PDF'}
           </button>
         </div>
+        
+        {paper.communityPdfs && paper.communityPdfs.length > 0 && (
+          <div className={styles.communityPdfsSection}>
+            <h4 className={styles.communityPdfsTitle}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="currentColor">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+              Community Uploaded PDFs
+            </h4>
+            <ul className={styles.communityPdfList}>
+              {paper.communityPdfs.map(pdf => (
+                <li key={pdf.fileId}>
+                  <div className={styles.communityPdfInfo}>
+                    <span className={styles.communityPdfName}>{pdf.fileName}</span>
+                    <span className={styles.communityPdfMeta}>
+                      Uploaded by <strong>{pdf.uploadedByFullName}</strong> on {new Date(pdf.uploadedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <button 
+                    type="button" 
+                    className={styles.communityPdfDownload} 
+                    onClick={() => handleDownloadCommunityPdf(pdf.fileId, pdf.fileName)}
+                  >
+                    Download
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {followError && <p className={styles.followError}>{followError}</p>}
         {bookmarkError && <p className={styles.bookmarkError}>{bookmarkError}</p>}
         {downloadError && <p className={styles.bookmarkError}>{downloadError}</p>}

@@ -175,8 +175,14 @@
   display: flex;
   align-items: flex-start;
   flex-direction: column;
-  gap: 0.4rem;
-  max-width: 180px;
+  gap: 0.6rem;
+  max-width: 250px;
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .photoButton {
@@ -213,18 +219,27 @@
 }
 
 .removePhotoButton {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-danger);
-  font-size: 0.74rem;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--color-danger-border, #fecaca);
+  border-radius: 9px;
+  background: var(--color-danger-bg, #fef2f2);
+  color: var(--color-danger, #ef4444);
+  font-size: 0.78rem;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
 }
 
-.removePhotoButton:hover {
-  text-decoration: underline;
+.removePhotoButton:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
 }
+
 
 .fileInput {
   display: none;

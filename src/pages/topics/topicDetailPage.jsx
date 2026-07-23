@@ -139,22 +139,30 @@ function TopicDetailPage() {
           setGapDashboard(gapsResponse.value)
         } else {
           setGapDashboard(null)
-          setGapError(
-            gapsResponse.reason?.response?.data?.message ||
-            gapsResponse.reason?.message ||
-            'Could not load topic gap dashboard.',
-          )
+          if (gapsResponse.reason?.response?.status === 403 || gapsResponse.reason?.message?.includes('403')) {
+            setGapError('⭐ Premium Feature: Please upgrade to a Researcher account to unlock and view the Generated Gap Analysis.')
+          } else {
+            setGapError(
+              gapsResponse.reason?.response?.data?.message ||
+              gapsResponse.reason?.message ||
+              'Could not load topic gap dashboard.',
+            )
+          }
         }
 
         if (gapListResponse.status === 'fulfilled') {
           setGapList(gapListResponse.value)
         } else {
           setGapList(null)
-          setGapListError(
-            gapListResponse.reason?.response?.data?.message ||
-            gapListResponse.reason?.message ||
-            'Could not load topic gap list.',
-          )
+          if (gapListResponse.reason?.response?.status === 403 || gapListResponse.reason?.message?.includes('403')) {
+            setGapListError('⭐ Premium Feature: Please upgrade to a Researcher account to view research opportunities.')
+          } else {
+            setGapListError(
+              gapListResponse.reason?.response?.data?.message ||
+              gapListResponse.reason?.message ||
+              'Could not load topic gap list.',
+            )
+          }
         }
 
         if (hasToken) {

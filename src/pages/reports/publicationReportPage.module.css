@@ -83,6 +83,11 @@
   font-size: 0.73rem;
   font-weight: 750;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterPanel button:hover:not(:disabled) {
+  background: var(--color-brand-light);
 }
 
 .filterPanel button:disabled {
@@ -96,13 +101,12 @@
 }
 
 .exportBtn {
-  background: var(--color-surface) !important;
-  color: var(--color-brand) !important;
+  background: var(--color-brand) !important;
+  color: #ffffff !important;
 }
 
 .exportBtn:hover:not(:disabled) {
   background: var(--color-brand-light) !important;
-  color: #fff !important;
 }
 
 .error {

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { getMe, updateProfile, changePassword } from '../../services/authService'
-import { uploadFile } from '../../services/fileService'
+import { uploadAvatar } from '../../services/fileService'
 import Skeleton from '../../components/Skeleton'
 import FollowingPage from './followingPage'
+import DocumentsTab from './documentsTab'
 import styles from './profilePage.module.css'
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
@@ -132,7 +133,11 @@ function ProfilePage() {
         const storageKey = getAvatarStorageKey(result.id)
         setAvatar(storageKey ? localStorage.getItem(storageKey) || '' : '')
       } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to load profile')
+        let errorMessage = err.response?.data?.message || err.message || 'Failed to load profile'
+        if (errorMessage.includes('status code')) {
+          errorMessage = 'An error occurred while communicating with the server.'
+        }
+        setError(errorMessage)
       } finally {
         setLoading(false)
       }
@@ -169,19 +174,32 @@ function ProfilePage() {
 
     setProcessingAvatar(true)
     try {
-      // Gọi API up hình lên Backend B2
-      const uploadedData = await uploadFile(file, 'image')
-      const uploadedUrl = uploadedData.url || uploadedData // Phòng trường hợp BE trả thẳng chuỗi
+      const base64Avatar = await resizeAvatar(file)
 
-      setAvatar(uploadedUrl)
+      // Lưu trữ local để hiển thị ngay lập tức (và tránh lỗi CORS 401 khi dùng ảnh từ server API)
+      const storageKey = getAvatarStorageKey(profile.id)
+      localStorage.setItem(storageKey, base64Avatar)
+      setAvatar(base64Avatar)
+
+      // Phát event cập nhật Header
       window.dispatchEvent(
         new CustomEvent('profile-avatar-updated', {
-          detail: { userId: profile.id, image: uploadedUrl },
+          detail: { userId: profile.id, image: base64Avatar },
         }),
       )
+
+      // Gọi API up hình lên Backend B2 ngầm
+      await uploadAvatar(file)
+      
       setSuccess('Profile photo uploaded to server.')
     } catch (err) {
-      setError(err.message || 'Failed to upload profile image.')
+      let errorMessage = 'Failed to upload profile image.'
+      if (err.message && err.message.includes('403')) {
+        errorMessage = 'You do not have permission to perform this action.'
+      } else if (err.message) {
+        errorMessage = err.message.includes('status code') ? 'Failed to connect to the server.' : err.message
+      }
+      setError(errorMessage)
     } finally {
       setProcessingAvatar(false)
     }
@@ -293,11 +311,20 @@ function ProfilePage() {
           >
             Following
           </button>
+          <button
+            type="button"
+            className={tab === 'documents' ? styles.tabActive : styles.tab}
+            onClick={() => setTab('documents')}
+          >
+            Documents
+          </button>
         </div>
       </header>
 
       {tab === 'following' ? (
         <FollowingPage />
+      ) : tab === 'documents' ? (
+        <DocumentsTab />
       ) : (
         <>
           {error && <div className={styles.alertError}>{error}</div>}
@@ -314,22 +341,24 @@ function ProfilePage() {
                 )}
               </div>
               <div className={styles.avatarActions}>
-                <button
-                  type="button"
-                  className={styles.photoButton}
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={processingAvatar}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M9 3 7.5 5H5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-2.5L15 3H9Zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-                  </svg>
-                  {processingAvatar ? 'Processing...' : avatar ? 'Change photo' : 'Upload photo'}
-                </button>
-                {avatar && (
-                  <button type="button" className={styles.removePhotoButton} onClick={handleRemoveAvatar}>
-                    Remove
+                <div className={styles.buttonGroup}>
+                  <button
+                    type="button"
+                    className={styles.photoButton}
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={processingAvatar}
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M9 3 7.5 5H5a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V8a3 3 0 0 0-3-3h-2.5L15 3H9Zm3 5a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
+                    </svg>
+                    {processingAvatar ? 'Processing...' : avatar ? 'Change photo' : 'Upload photo'}
                   </button>
-                )}
+                  {avatar && (
+                    <button type="button" className={styles.removePhotoButton} onClick={handleRemoveAvatar}>
+                      Remove
+                    </button>
+                  )}
+                </div>
                 <input
                   ref={avatarInputRef}
                   className={styles.fileInput}

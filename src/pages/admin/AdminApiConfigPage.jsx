@@ -1611,6 +1611,24 @@ function AdminApiConfigPage() {
                       <span>{paper.year || "No year"}</span>
                       <span>{formatNumber(paper.citationCount)} citations</span>
                       <span>{paper.doi || "No DOI"}</span>
+                      <span>Journal: {paper.journal || "None"}</span>
+                      <span>
+                        Topics:{" "}
+                        {(paper.topics || []).length > 0
+                          ? (paper.topics || []).join(", ")
+                          : "None"}
+                      </span>
+                      <span>
+                        Keywords:{" "}
+                        {(paper.keywords || []).length > 0
+                          ? (paper.keywords || []).slice(0, 8).join(", ")
+                          : "None"}
+                      </span>
+                      {paper.pdfUrl ? (
+                        <span className={styles.pdfAvailable}>Has PDF</span>
+                      ) : (
+                        <span>No PDF</span>
+                      )}
                     </div>
                   </article>
                 ))

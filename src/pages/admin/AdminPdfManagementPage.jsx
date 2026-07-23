@@ -159,6 +159,27 @@ export default function AdminPdfManagementPage() {
     }
   }
 
+  // ─── Retry failed downloads ────────────────────────────────────────
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [retryResult, setRetryResult] = useState(null);
+  const [retryError, setRetryError] = useState("");
+  
+  async function handleRetryFailed() {
+    setRetryLoading(true);
+    setRetryResult(null);
+    setRetryError("");
+    try {
+      const { retryFailedDownloads } = await import('../../services/adminService');
+      const res = await retryFailedDownloads();
+      setRetryResult(res);
+      loadPapers(); // reload list to see status change to Queued
+    } catch (err) {
+      setRetryError(getErrorMessage(err));
+    } finally {
+      setRetryLoading(false);
+    }
+  }
+
   // ─── Status badge ────────────────────────────────────────────────
   function StatusBadge({ status }) {
     const st = status?.toLowerCase();
@@ -215,6 +236,19 @@ export default function AdminPdfManagementPage() {
                 "⚡ Extract all pending"
               )}
             </button>
+            <button
+              className={styles.backfillBtn}
+              onClick={handleRetryFailed}
+              disabled={retryLoading}
+              title="Reset all failed PDF downloads so the system can retry downloading them"
+              style={{ backgroundColor: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+            >
+              {retryLoading ? (
+                <><span className={styles.spinner} /> Retrying…</>
+              ) : (
+                "🔄 Retry Failed"
+              )}
+            </button>
           </div>
           {backfillResult && (
             <div className={styles.backfillSuccess}>
@@ -223,8 +257,16 @@ export default function AdminPdfManagementPage() {
               {backfillResult.failed ?? 0} failed
             </div>
           )}
+          {retryResult && (
+            <div className={styles.backfillSuccess} style={{ color: 'var(--color-brand)' }}>
+              ✓ Reset {retryResult.retryCount ?? 0} failed PDFs to Queued status. They will be downloaded shortly.
+            </div>
+          )}
           {backfillError && (
             <div className={styles.errorInline}>{backfillError}</div>
+          )}
+          {retryError && (
+            <div className={styles.errorInline}>{retryError}</div>
           )}
         </div>
       </div>

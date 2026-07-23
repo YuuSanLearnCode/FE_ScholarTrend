@@ -497,4 +497,10 @@ export async function testAIGapAnalysis() {
   return unwrapResponse(response, 'Failed to test AI connection.')
 }
 
-
+export async function retryFailedDownloads() {
+  const { data: response } = await api.post('/admin/pdf-text/retry-failed-downloads')
+  if (response && typeof response === 'object' && 'success' in response) {
+    return unwrapResponse(response, 'Failed to retry failed downloads.')
+  }
+  return response
+}

@@ -12,10 +12,19 @@ import {
   YAxis,
 } from 'recharts'
 import Skeleton from '../../components/Skeleton'
-import { getPublicationReport, exportReportAsJson, exportReportAsCsv } from '../../services/reportService'
+import { getPublicationReport, exportReportAsCsv } from '../../services/reportService'
 import styles from './publicationReportPage.module.css'
 
 function getInitialFilters() {
+  const saved = sessionStorage.getItem('publicationReportFilters')
+  if (saved) {
+    try {
+      return JSON.parse(saved)
+    } catch (e) {
+      // Ignore invalid JSON
+    }
+  }
+  
   const currentYear = new Date().getFullYear()
   return {
     yearFrom: String(currentYear - 5),
@@ -94,6 +103,10 @@ function PublicationReportPage() {
     }
   }, [])
 
+  useEffect(() => {
+    sessionStorage.setItem('publicationReportFilters', JSON.stringify(filters))
+  }, [filters])
+
   const handleChange = (field) => (event) => {
     setFilters((current) => ({ ...current, [field]: event.target.value }))
   }
@@ -108,23 +121,7 @@ function PublicationReportPage() {
     await loadReport(filters)
   }
 
-  const handleExportJson = async () => {
-    try {
-      setLoading(true)
-      const blob = await exportReportAsJson(filters)
-      const url = window.URL.createObjectURL(new Blob([blob]))
-      const link = document.createElement('a')
-      link.href = url
-      link.setAttribute('download', `publication_report_${new Date().getTime()}.json`)
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    } catch (err) {
-      handleError(err, 'Failed to export JSON report.')
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   const handleExportCsv = async () => {
     try {
@@ -204,9 +201,7 @@ function PublicationReportPage() {
           <button type="submit" disabled={loading}>
             {loading ? 'Generating...' : 'Generate report'}
           </button>
-          <button type="button" onClick={handleExportJson} disabled={loading} className={styles.exportBtn}>
-            Export JSON
-          </button>
+
           <button type="button" onClick={handleExportCsv} disabled={loading} className={styles.exportBtn}>
             Export CSV
           </button>

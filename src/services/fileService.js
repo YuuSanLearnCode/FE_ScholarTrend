@@ -12,11 +12,17 @@ function unwrapResponse(response, fallbackMessage) {
  * @param {File} file 
  * @param {string} type - Loại file (Ví dụ: 'document', 'image')
  */
-export async function uploadFile(file, type = 'document') {
+export async function uploadFile(file, category = 'document', description = '', paperId = null) {
   const formData = new FormData()
   formData.append('file', file)
-  if (type) {
-    formData.append('type', type)
+  if (category) {
+    formData.append('category', category)
+  }
+  if (description) {
+    formData.append('description', description)
+  }
+  if (paperId) {
+    formData.append('paperId', paperId)
   }
 
   const { data: response } = await api.post('/files/upload', formData, {

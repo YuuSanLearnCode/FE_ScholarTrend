@@ -13,7 +13,7 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Xử lý lỗi 401 → redirect về login
+// Xử lý lỗi toàn cục: 401 → redirect, và làm đẹp message
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -29,6 +29,33 @@ api.interceptors.response.use(
       localStorage.removeItem('userId')
       window.location.href = '/login'
     }
+
+    // Làm đẹp (Beautify) các lỗi kỹ thuật thô kệch (ví dụ: "Request failed with status code 403")
+    if (error.response) {
+      const status = error.response.status
+      if (status === 403) {
+        error.message = '⭐ Premium Feature: Please upgrade your account to unlock this feature.'
+      } else if (status === 429) {
+        error.message = 'Too many requests. Please slow down and try again later.'
+      } else if (status >= 500) {
+        error.message = 'The server encountered an issue. Please try again later.'
+      } else if (error.message?.includes('status code')) {
+        error.message = 'An unexpected error occurred while communicating with the server.'
+      }
+    } else if (error.message === 'Network Error') {
+      error.message = 'Unable to connect to the server. Please check your connection.'
+    } else if (error.message?.includes('status code')) {
+      error.message = 'Failed to connect to the server.'
+    }
+
+    // Đẩy message thân thiện này vào chung cấu trúc để UI ưu tiên hiển thị
+    if (error.response && (!error.response.data || !error.response.data.message || error.response.data.message.includes('status code'))) {
+      error.response.data = {
+        ...error.response.data,
+        message: error.message
+      }
+    }
+
     return Promise.reject(error)
   }
 )
