@@ -91,12 +91,6 @@ function DashboardPage() {
       detail: 'Tracked journals',
       tone: 'green',
     },
-    {
-      label: 'Unread Notifications',
-      value: dashboardData?.unreadNotifications ?? 0,
-      detail: 'Need attention',
-      tone: 'amber',
-    },
   ]
   const overviewStats = overviewData
     ? [
@@ -131,11 +125,6 @@ function DashboardPage() {
               View trends
             </Link>
           </div>
-        </div>
-        <div className={styles.heroCard}>
-          <span>Unread alerts</span>
-          <strong>{formatNumber(dashboardData?.unreadNotifications ?? 0)}</strong>
-          <p>{recommendedTopics.length} recommended topics ready to review.</p>
         </div>
       </div>
 
