@@ -22,7 +22,6 @@ import BookmarksPage from "./pages/user/bookmarksPage";
 import FollowingPage from "./pages/user/followingPage";
 import NotificationsPage from "./pages/user/notificationsPage";
 import ProfilePage from "./pages/user/profilePage";
-import PublicationReportPage from "./pages/reports/publicationReportPage";
 import SubscriptionPlansPage from "./pages/payment/SubscriptionPlansPage";
 import PaymentResultPage from "./pages/payment/PaymentResultPage";
 import PaymentHistoryPage from "./pages/payment/paymentHistoryPage";
@@ -119,7 +118,7 @@ function App() {
         { path: "topics", element: <TopicsPage /> },
         { path: "topics/:topicId", element: <TopicDetailPage /> },
         { path: "trends", element: <TrendChartPage /> },
-        { path: "reports/publications", element: <PublicationReportPage /> },
+        { path: "reports/publications", element: <Navigate to="/trends" replace /> },
         { path: "pricing", element: <SubscriptionPlansPage /> },
         { path: "payment/result", element: <PaymentResultPage /> },
 
