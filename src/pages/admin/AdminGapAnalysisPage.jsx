@@ -93,7 +93,7 @@ function AdminGapAnalysisPage() {
 
   useEffect(() => {
     getTopics()
-      .then(result => setTopics(result || []))
+      .then(result => setTopics(result?.items || []))
       .catch(console.error)
       .finally(() => setTopicsLoading(false));
   }, []);
