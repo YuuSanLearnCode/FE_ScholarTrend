@@ -36,7 +36,7 @@ function getCompareFilter(filters = {}) {
 
 export async function getTrendDashboard(filters = {}) {
   const params = getTrendParams(filters)
-  const { data: response } = await api.get('/trends/dashboard', { params })
+  const { data: response } = await api.get('/Trends/dashboard', { params })
   const result = unwrapResponse(response, 'Failed to load trend dashboard.')
 
   return {
@@ -48,7 +48,7 @@ export async function getTrendDashboard(filters = {}) {
 }
 
 export async function getKeywordTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/keywords', {
+  const { data: response } = await api.get('/Trends/keywords', {
     params: getTrendParams(filters),
   })
   const result = unwrapResponse(response, 'Failed to load keyword trends.')
@@ -60,7 +60,7 @@ export async function getKeywordTrends(filters = {}) {
 }
 
 export async function getTopKeywordTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/keywords/top', {
+  const { data: response } = await api.get('/Trends/keywords/top', {
     params: getTrendParams(filters),
   })
 
@@ -69,7 +69,7 @@ export async function getTopKeywordTrends(filters = {}) {
 }
 
 export async function getTopicTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/topics', {
+  const { data: response } = await api.get('/Trends/topics', {
     params: getTrendParams(filters),
   })
   const result = unwrapResponse(response, 'Failed to load topic trends.')
@@ -81,7 +81,7 @@ export async function getTopicTrends(filters = {}) {
 }
 
 export async function getTopTopicTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/topics/top', {
+  const { data: response } = await api.get('/Trends/topics/top', {
     params: getTrendParams(filters),
   })
 
@@ -91,7 +91,7 @@ export async function getTopTopicTrends(filters = {}) {
 
 /** Tổng quan: total papers, journals, users... */
 export async function getJournalTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/journals', {
+  const { data: response } = await api.get('/Trends/journals', {
     params: getTrendParams(filters),
   })
   const result = unwrapResponse(response, 'Failed to load journal trends.')
@@ -103,7 +103,7 @@ export async function getJournalTrends(filters = {}) {
 }
 
 export async function getTopJournalTrends(filters = {}) {
-  const { data: response } = await api.get('/trends/journals/top', {
+  const { data: response } = await api.get('/Trends/journals/top', {
     params: getTrendParams(filters),
   })
 
