@@ -20,7 +20,7 @@ function getInitialFilters() {
   if (saved) {
     try {
       return JSON.parse(saved)
-    } catch (e) {
+    } catch {
       // Ignore invalid JSON
     }
   }
@@ -48,7 +48,7 @@ function formatDate(value) {
   }).format(date)
 }
 
-function PublicationReportPage() {
+function PublicationReportPage({ embedded = false }) {
   const [filters, setFilters] = useState(getInitialFilters)
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -150,11 +150,11 @@ function PublicationReportPage() {
     : 0
 
   return (
-    <section className={styles.page}>
-      <header className={styles.header}>
+    <section className={`${styles.page} ${embedded ? styles.embeddedPage : ''}`} id="publication-report">
+      <header className={`${styles.header} ${embedded ? styles.embeddedHeader : ''}`}>
         <div>
           <span className={styles.eyebrow}>Research reporting</span>
-          <h1>Publication Report</h1>
+          {embedded ? <h2>Publication Report</h2> : <h1>Publication Report</h1>}
           <p>Analyze publication output and citation impact across a selected period.</p>
         </div>
         {report?.generatedAt && (
@@ -248,14 +248,36 @@ function PublicationReportPage() {
       )}
 
       {loading && !report ? (
-        <>
-          <div className={styles.statsGrid}>
+        embedded ? (
+          <div className={styles.embeddedSummary}>
             <Skeleton variant="card" count={3} />
           </div>
-          <Skeleton variant="chart" />
-        </>
+        ) : (
+          <>
+            <div className={styles.statsGrid}>
+              <Skeleton variant="card" count={3} />
+            </div>
+            <Skeleton variant="chart" />
+          </>
+        )
       ) : report ? (
-        <>
+        embedded ? (
+          <div className={styles.embeddedSummary}>
+            <article>
+              <span>Grouped by</span>
+              <strong>{report.groupBy || filters.groupBy}</strong>
+            </article>
+            <article>
+              <span>Report groups</span>
+              <strong>{formatNumber(report.items.length)}</strong>
+            </article>
+            <article>
+              <span>Citations per paper</span>
+              <strong>{averageCitations.toFixed(1)}</strong>
+            </article>
+          </div>
+        ) : (
+          <>
           <div className={styles.statsGrid}>
             <article>
               <span>Total papers</span>
@@ -320,7 +342,8 @@ function PublicationReportPage() {
               )}
             </div>
           </article>
-        </>
+          </>
+        )
       ) : null}
     </section>
   )

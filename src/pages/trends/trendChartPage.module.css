@@ -192,7 +192,7 @@
 
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.9rem;
   margin-bottom: 1.25rem;
 }
@@ -222,6 +222,13 @@
   letter-spacing: -0.03em;
 }
 
+.statTitleValue {
+  overflow-wrap: anywhere;
+  font-size: 1rem !important;
+  line-height: 1.25;
+  letter-spacing: 0 !important;
+}
+
 .statCard small {
   color: var(--color-text-muted);
   font-size: 0.65rem;
@@ -240,6 +247,17 @@
   color: var(--color-text);
   font-size: 1rem;
   font-weight: 800;
+}
+
+.panelMeta {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.widePanel {
+  overflow: hidden;
 }
 
 .switchBtn {
@@ -357,8 +375,7 @@
   font-size: 0.72rem;
 }
 
-.chartWrap,
-.chartWrapSmall {
+.chartWrap {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 11px;
@@ -370,47 +387,33 @@
   padding: 1rem 0.5rem 0.5rem 0;
 }
 
-.chartWrapSmall {
-  height: 250px;
-  padding: 0.75rem 0.45rem 0.35rem 0;
-}
-
 .chartsRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
 }
 
+.topGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1.25rem;
+}
+
+.topicSplit {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(0, 1.7fr);
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.topicSplit .panel {
+  margin-bottom: 0;
+}
+
 .rankList {
   display: grid;
   gap: 0.45rem;
   margin-top: 0.8rem;
-}
-
-.seriesLegend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.8rem;
-  margin-top: 0.9rem;
-}
-
-.seriesLegendItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--color-text-secondary);
-  font-size: 0.68rem;
-  font-weight: 650;
-}
-
-.seriesLegendItem span {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
-}
-
-.seriesLegendItem:hover {
-  color: var(--color-brand);
 }
 
 .rankItem {
@@ -469,6 +472,105 @@
   color: var(--color-text-muted) !important;
 }
 
+.entityList {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.entityItem {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.72rem;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--color-text-secondary);
+  transition: var(--transition);
+}
+
+.entityItem:hover,
+.entityItemFeatured {
+  border-color: var(--color-brand-border);
+  background: var(--color-brand-bg);
+}
+
+.entityRank {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-surface-hover);
+  color: var(--color-brand);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.entityBody {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.entityTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.entityColorDot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.entityTitle strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entityBody small {
+  color: var(--color-text-muted);
+  font-size: 0.64rem;
+}
+
+.entityMetrics {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  max-width: 230px;
+}
+
+.entityMetrics span {
+  padding: 0.22rem 0.42rem;
+  border-radius: 7px;
+  background: #f8fafc;
+  color: var(--color-text-muted);
+  font-size: 0.62rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.emptyList {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 9px;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 .journalGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -496,6 +598,13 @@
   color: var(--color-brand-light);
   font-size: 0.65rem;
   font-weight: 850;
+}
+
+.journalTitle {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .journalCard strong {
@@ -542,6 +651,14 @@
     grid-template-columns: 1fr;
   }
 
+  .topGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .topicSplit {
+    grid-template-columns: 1fr;
+  }
+
   .compareForm {
     grid-template-columns: 1fr;
     align-items: stretch;
@@ -585,6 +702,10 @@
     flex-direction: column;
   }
 
+  .panelMeta {
+    white-space: normal;
+  }
+
   .switchBtn {
     width: 100%;
   }
@@ -599,5 +720,15 @@
 
   .chartWrap {
     height: 300px;
+  }
+
+  .entityItem {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .entityMetrics {
+    grid-column: 2;
+    justify-content: flex-start;
+    max-width: none;
   }
 }

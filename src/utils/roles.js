@@ -38,7 +38,6 @@ export function getNavItems(role) {
     { to: '/topics', label: 'Topics' },
     { to: '/authors', label: 'Authors' },
     { to: '/trends', label: 'Trends' },
-    { to: '/reports/publications', label: 'Reports' },
     { to: '/pricing', label: 'Pricing' },
   ]
 
