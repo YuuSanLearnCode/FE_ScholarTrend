@@ -164,6 +164,7 @@ function Layout() {
                           {userRole && <span className={styles.dropdownRole}>{getRoleLabel(userRole)}</span>}
                         </div>
                         <div className={styles.dropdownDivider} />
+                        <NavLink to="/following" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Following</NavLink>
                         <NavLink to="/profile" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Profile</NavLink>
                         <NavLink to="/payment/history" className={styles.dropdownItem} onClick={() => setMenuOpen(false)}>Billing</NavLink>
                         <button type="button" className={styles.dropdownItem} onClick={handleLogout}>Logout</button>
