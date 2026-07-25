@@ -1096,14 +1096,16 @@ function EntityList({ items, type, selectedId, onSelect, colorMap }) {
                     aria-hidden="true"
                   />
                 )}
-                <strong>{item.name}</strong>
+                <strong title={item.name}>{item.name}</strong>
               </span>
-              <small>{item.periodLabel || formatPeriod(item)}</small>
+              <span className={styles.entityMetrics}>
+                <small>{item.periodLabel || formatPeriod(item)}</small>
+                <span>{formatNumber(item.paperCount)} papers</span>
+                <span>{formatNumber(item.citationCount)} citations</span>
+                <span className={getGrowthClass(item.growthRate)}>{formatGrowth(item.growthRate)}</span>
+              </span>
             </span>
-            <span className={styles.entityMetrics}>
-              <span>{formatNumber(item.paperCount)} papers</span>
-              <span>{formatNumber(item.citationCount)} citations</span>
-              <span className={getGrowthClass(item.growthRate)}>{formatGrowth(item.growthRate)}</span>
+            <span className={styles.entityAction}>
               <Link
                 to={getEntityLink(type, item)}
                 className={styles.entityOpenLink}
