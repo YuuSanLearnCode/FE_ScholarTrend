@@ -118,7 +118,13 @@ function JournalDetailPage() {
     )
   }
 
-  const trendData = journal.trendChart.map((point) => ({
+  // Filter out leading zeros so the chart starts from the first active period
+  let activeStartIndex = (journal.trendChart ?? []).findIndex(
+    (point) => (point.paperCount ?? 0) > 0 || (point.citationCount ?? 0) > 0
+  )
+  if (activeStartIndex === -1) activeStartIndex = 0
+
+  const trendData = (journal.trendChart ?? []).slice(activeStartIndex).map((point) => ({
     ...point,
     period: formatPeriod(point),
   }))

@@ -306,7 +306,13 @@ function TopicDetailPage() {
     )
   }
 
-  const trendData = topic.trendChart.map((point) => ({
+  // Filter out leading zeros so the chart starts from the first active period
+  let activeStartIndex = (topic.trendChart ?? []).findIndex(
+    (point) => (point.paperCount ?? 0) > 0 || (point.citationCount ?? 0) > 0
+  )
+  if (activeStartIndex === -1) activeStartIndex = 0
+
+  const trendData = (topic.trendChart ?? []).slice(activeStartIndex).map((point) => ({
     ...point,
     period: formatPeriod(point),
   }))
