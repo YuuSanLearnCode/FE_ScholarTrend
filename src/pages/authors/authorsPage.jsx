@@ -19,19 +19,20 @@ function getInitials(name) {
 
 function AuthorsPage() {
   const [authors, setAuthors] = useState([])
-  const [totalCount, setTotalCount] = useState(0)
   const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [submittedQuery, setSubmittedQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(query)
-      setPage(1) // Reset to page 1 on new search
-    }, 500)
-    return () => clearTimeout(handler)
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setSubmittedQuery(query.trim())
+    }, 350)
+    return () => window.clearTimeout(timer)
   }, [query])
 
   useEffect(() => {
@@ -39,16 +40,23 @@ function AuthorsPage() {
 
     async function fetchAuthors() {
       setLoading(true)
+      setError('')
       try {
-        const result = await getAuthors({ keyword: debouncedQuery, page, pageSize: PAGE_SIZE })
-        if (active) {
-          setAuthors(result.items || [])
-          setTotalCount(result.totalCount || 0)
-        }
+        const result = await getAuthors({
+          keyword: submittedQuery,
+          page,
+          pageSize: PAGE_SIZE,
+        })
+        if (!active) return
+        setAuthors(result.items)
+        setTotalCount(result.totalCount)
+        setTotalPages(Math.max(1, result.totalPages || 1))
       } catch (err) {
         if (active) {
           setError(err.response?.data?.message || err.message || 'Failed to load authors.')
           setAuthors([])
+          setTotalCount(0)
+          setTotalPages(1)
         }
       } finally {
         if (active) setLoading(false)
@@ -59,15 +67,14 @@ function AuthorsPage() {
     return () => {
       active = false
     }
-  }, [debouncedQuery, page])
+  }, [page, submittedQuery])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
-  
-  const startIndex = (currentPage - 1) * PAGE_SIZE
-  const firstResult = totalCount > 0 ? startIndex + 1 : 0
-  const lastResult = Math.min(startIndex + authors.length, totalCount)
-  const totalPapers = authors.reduce((sum, author) => sum + (author.paperCount ?? 0), 0)
+  const totalPapers = useMemo(
+    () => authors.reduce((sum, author) => sum + (author.paperCount ?? 0), 0),
+    [authors],
+  )
+  const firstResult = totalCount > 0 ? (page - 1) * PAGE_SIZE + 1 : 0
+  const lastResult = Math.min(page * PAGE_SIZE, totalCount)
 
   const handleSearchChange = (event) => {
     setQuery(event.target.value)
@@ -88,7 +95,7 @@ function AuthorsPage() {
           </span>
           <span>
             <strong>{totalPapers}</strong>
-            Papers
+            Papers on this page
           </span>
         </div>
       </header>
@@ -102,9 +109,7 @@ function AuthorsPage() {
           placeholder="Search by name, affiliation, or country"
         />
         <span className={styles.resultCount}>
-          {totalCount > 0
-            ? `${firstResult}-${lastResult} of ${totalCount}`
-            : '0 results'}
+          {totalCount > 0 ? `${firstResult}-${lastResult} of ${totalCount}` : '0 results'}
         </span>
       </div>
 
@@ -145,13 +150,17 @@ function AuthorsPage() {
             })}
           </div>
           <Pagination
-            page={currentPage}
+            page={page}
             totalPages={totalPages}
             onPageChange={setPage}
           />
         </>
       ) : (
-        <div className={styles.empty}>No authors match your search.</div>
+        <div className={styles.empty}>
+          {submittedQuery
+            ? 'No authors match your search.'
+            : 'No authors available yet.'}
+        </div>
       )}
     </section>
   )

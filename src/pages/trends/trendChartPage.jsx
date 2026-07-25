@@ -97,6 +97,45 @@ function getSeriesTotal(series, metric) {
   return (series?.dataPoints ?? []).reduce((sum, point) => sum + (point[metric] ?? 0), 0)
 }
 
+/** Month with the highest paper count in the series — aligns list numbers with chart peaks. */
+function pickPeakPoint(dataPoints = []) {
+  if (!dataPoints.length) return null
+
+  return [...dataPoints].sort((a, b) => {
+    const paperDiff = (b.paperCount ?? 0) - (a.paperCount ?? 0)
+    if (paperDiff !== 0) return paperDiff
+    const scoreDiff = (b.trendingScore ?? 0) - (a.trendingScore ?? 0)
+    if (scoreDiff !== 0) return scoreDiff
+    const yearDiff = (b.year ?? 0) - (a.year ?? 0)
+    if (yearDiff !== 0) return yearDiff
+    return (b.month ?? 0) - (a.month ?? 0)
+  })[0]
+}
+
+function enrichTopItemsWithSeriesPeak(topItems, seriesList) {
+  const byId = new Map((seriesList ?? []).map((series) => [series.id, series]))
+
+  return (topItems ?? []).map((item) => {
+    const peak = pickPeakPoint(byId.get(item.id)?.dataPoints)
+    if (!peak) {
+      return {
+        ...item,
+        periodLabel: formatPeriod(item),
+      }
+    }
+
+    return {
+      ...item,
+      paperCount: peak.paperCount ?? item.paperCount,
+      citationCount: peak.citationCount ?? item.citationCount,
+      growthRate: peak.growthRate ?? item.growthRate,
+      year: peak.year ?? item.year,
+      month: peak.month ?? item.month,
+      periodLabel: `Peak ${formatPeriod(peak)}`,
+    }
+  })
+}
+
 function buildSeriesChartData(series, metric, keyPrefix) {
   const periods = new Map()
 
@@ -141,21 +180,56 @@ function buildSeriesColorMap(series) {
   return colors
 }
 
+function orderSeriesForChart(series, focusedId) {
+  if (focusedId == null) return series
+  return [...series].sort((a, b) => {
+    if (a.id === focusedId) return 1
+    if (b.id === focusedId) return -1
+    return 0
+  })
+}
+
+function getSeriesLineProps(seriesId, focusedId) {
+  const showingAll = focusedId == null
+  const isFocused = showingAll || focusedId === seriesId
+
+  return {
+    strokeOpacity: isFocused ? 1 : 0.14,
+    strokeWidth: focusedId === seriesId ? 3.5 : 2.2,
+    dot: isFocused ? { r: focusedId === seriesId ? 3.5 : 2.2 } : false,
+    activeDot: isFocused ? { r: 5 } : false,
+  }
+}
+
 function TrendChartPage() {
   const [dashboard, setDashboard] = useState(EMPTY_DASHBOARD)
   const [keywordSeries, setKeywordSeries] = useState([])
   const [keywordMetric, setKeywordMetric] = useState('paperCount')
+  const [keywordFocusId, setKeywordFocusId] = useState(null)
   const [topicSeries, setTopicSeries] = useState([])
   const [topicMetric, setTopicMetric] = useState('paperCount')
+  const [topicFocusId, setTopicFocusId] = useState(null)
   const [journalSeries, setJournalSeries] = useState([])
   const [journalMetric, setJournalMetric] = useState('paperCount')
+  const [journalFocusId, setJournalFocusId] = useState(null)
   const [filters, setFilters] = useState(getInitialFilters)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const clearChartFocus = () => {
+    setKeywordFocusId(null)
+    setTopicFocusId(null)
+    setJournalFocusId(null)
+  }
+
+  const toggleFocus = (currentId, nextId, setter) => {
+    setter(currentId === nextId ? null : nextId)
+  }
+
   const loadTrendData = async (nextFilters) => {
     setLoading(true)
     setError('')
+    clearChartFocus()
     try {
       const [
         dashboardResult,
@@ -218,6 +292,7 @@ function TrendChartPage() {
           getTopJournalTrends(initialFilters),
         ])
         if (active) {
+          clearChartFocus()
           setDashboard({
             ...dashboardResult,
             topKeywords: topKeywordResult,
@@ -230,6 +305,7 @@ function TrendChartPage() {
         }
       } catch (err) {
         if (active) {
+          clearChartFocus()
           setDashboard(EMPTY_DASHBOARD)
           setKeywordSeries([])
           setTopicSeries([])
@@ -301,6 +377,19 @@ function TrendChartPage() {
   )
   const journalColorMap = useMemo(() => buildSeriesColorMap(journalSeries), [journalSeries])
 
+  const keywordListItems = useMemo(
+    () => enrichTopItemsWithSeriesPeak(dashboard.topKeywords, keywordSeries),
+    [dashboard.topKeywords, keywordSeries],
+  )
+  const topicListItems = useMemo(
+    () => enrichTopItemsWithSeriesPeak(dashboard.topTopics, topicSeries),
+    [dashboard.topTopics, topicSeries],
+  )
+  const journalListItems = useMemo(
+    () => enrichTopItemsWithSeriesPeak(dashboard.topJournals, journalSeries),
+    [dashboard.topJournals, journalSeries],
+  )
+
   const hasDashboardData =
     dashboard.topKeywords.length > 0 ||
     dashboard.topTopics.length > 0 ||
@@ -309,15 +398,15 @@ function TrendChartPage() {
     keywordSeries.length > 0 ||
     topicSeries.length > 0 ||
     journalSeries.length > 0
-  const topKeyword = dashboard.topKeywords[0]
+  const topKeyword = keywordListItems[0] ?? dashboard.topKeywords[0]
   const firstKeywordSeries = keywordSeries[0]
-  const topTopic = dashboard.topTopics[0]
+  const topTopic = topicListItems[0] ?? dashboard.topTopics[0]
   const periodRange = publicationTrend.length
     ? `${publicationTrend[0].period} - ${publicationTrend[publicationTrend.length - 1].period}`
     : 'No period'
   const topKeywordName = topKeyword?.name || firstKeywordSeries?.name || 'No data'
   const topKeywordDetail = topKeyword
-    ? `${formatNumber(topKeyword.paperCount)} papers`
+    ? `${formatNumber(topKeyword.paperCount)} papers · ${topKeyword.periodLabel || formatPeriod(topKeyword)}`
     : firstKeywordSeries
       ? `${formatNumber(getSeriesTotal(firstKeywordSeries, 'paperCount'))} papers in series`
       : 'No keyword found'
@@ -606,12 +695,16 @@ function TrendChartPage() {
                 <div>
                   <span className={styles.panelEyebrow}>Keywords</span>
                   <h2 className={styles.panelTitle}>Top keywords</h2>
+                  <p className={styles.panelHint}>
+                    Click a row to isolate it on the chart. Counts show the peak month in range.
+                  </p>
                 </div>
               </div>
               <EntityList
-                items={dashboard.topKeywords}
+                items={keywordListItems}
                 type="keyword"
-                featuredName={topKeyword?.name}
+                selectedId={keywordFocusId}
+                onSelect={(id) => toggleFocus(keywordFocusId, id, setKeywordFocusId)}
                 colorMap={keywordColorMap}
               />
             </article>
@@ -622,28 +715,39 @@ function TrendChartPage() {
                   <span className={styles.panelEyebrow}>Keywords</span>
                   <h2 className={styles.panelTitle}>Keyword momentum over time</h2>
                 </div>
-                <div className={styles.metricSwitch}>
-                  <button
-                    type="button"
-                    className={keywordMetric === 'paperCount' ? styles.metricActive : ''}
-                    onClick={() => setKeywordMetric('paperCount')}
-                  >
-                    Papers
-                  </button>
-                  <button
-                    type="button"
-                    className={keywordMetric === 'citationCount' ? styles.metricActive : ''}
-                    onClick={() => setKeywordMetric('citationCount')}
-                  >
-                    Citations
-                  </button>
-                  <button
-                    type="button"
-                    className={keywordMetric === 'trendingScore' ? styles.metricActive : ''}
-                    onClick={() => setKeywordMetric('trendingScore')}
-                  >
-                    Score
-                  </button>
+                <div className={styles.chartControls}>
+                  {keywordFocusId != null && (
+                    <button
+                      type="button"
+                      className={styles.showAllButton}
+                      onClick={() => setKeywordFocusId(null)}
+                    >
+                      Show all
+                    </button>
+                  )}
+                  <div className={styles.metricSwitch}>
+                    <button
+                      type="button"
+                      className={keywordMetric === 'paperCount' ? styles.metricActive : ''}
+                      onClick={() => setKeywordMetric('paperCount')}
+                    >
+                      Papers
+                    </button>
+                    <button
+                      type="button"
+                      className={keywordMetric === 'citationCount' ? styles.metricActive : ''}
+                      onClick={() => setKeywordMetric('citationCount')}
+                    >
+                      Citations
+                    </button>
+                    <button
+                      type="button"
+                      className={keywordMetric === 'trendingScore' ? styles.metricActive : ''}
+                      onClick={() => setKeywordMetric('trendingScore')}
+                    >
+                      Score
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className={styles.chartWrap}>
@@ -661,18 +765,26 @@ function TrendChartPage() {
                         }
                         contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 10 }}
                       />
-                      {keywordSeries.map((series, index) => (
-                        <Line
-                          key={series.id}
-                          type="monotone"
-                          dataKey={`keyword_${series.id}`}
-                          name={series.name}
-                          stroke={COLORS[index % COLORS.length]}
-                          strokeWidth={2.5}
-                          connectNulls
-                          dot={{ r: 2.5 }}
-                        />
-                      ))}
+                      {orderSeriesForChart(keywordSeries, keywordFocusId).map((series, index) => {
+                        const lineProps = getSeriesLineProps(series.id, keywordFocusId)
+                        const color =
+                          keywordColorMap.get(`id:${series.id}`) ?? COLORS[index % COLORS.length]
+                        return (
+                          <Line
+                            key={series.id}
+                            type="monotone"
+                            dataKey={`keyword_${series.id}`}
+                            name={series.name}
+                            stroke={color}
+                            strokeOpacity={lineProps.strokeOpacity}
+                            strokeWidth={lineProps.strokeWidth}
+                            connectNulls
+                            dot={lineProps.dot}
+                            activeDot={lineProps.activeDot}
+                            isAnimationActive={false}
+                          />
+                        )
+                      })}
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
@@ -688,12 +800,16 @@ function TrendChartPage() {
                 <div>
                   <span className={styles.panelEyebrow}>Topics</span>
                   <h2 className={styles.panelTitle}>Top topics</h2>
+                  <p className={styles.panelHint}>
+                    Click a row to isolate it on the chart. Counts show the peak month in range.
+                  </p>
                 </div>
               </div>
               <EntityList
-                items={dashboard.topTopics}
+                items={topicListItems}
                 type="topic"
-                featuredName={topTopic?.name}
+                selectedId={topicFocusId}
+                onSelect={(id) => toggleFocus(topicFocusId, id, setTopicFocusId)}
                 colorMap={topicColorMap}
               />
             </article>
@@ -704,28 +820,39 @@ function TrendChartPage() {
                   <span className={styles.panelEyebrow}>Topics</span>
                   <h2 className={styles.panelTitle}>Topic momentum over time</h2>
                 </div>
-                <div className={styles.metricSwitch}>
-                  <button
-                    type="button"
-                    className={topicMetric === 'paperCount' ? styles.metricActive : ''}
-                    onClick={() => setTopicMetric('paperCount')}
-                  >
-                    Papers
-                  </button>
-                  <button
-                    type="button"
-                    className={topicMetric === 'citationCount' ? styles.metricActive : ''}
-                    onClick={() => setTopicMetric('citationCount')}
-                  >
-                    Citations
-                  </button>
-                  <button
-                    type="button"
-                    className={topicMetric === 'trendingScore' ? styles.metricActive : ''}
-                    onClick={() => setTopicMetric('trendingScore')}
-                  >
-                    Score
-                  </button>
+                <div className={styles.chartControls}>
+                  {topicFocusId != null && (
+                    <button
+                      type="button"
+                      className={styles.showAllButton}
+                      onClick={() => setTopicFocusId(null)}
+                    >
+                      Show all
+                    </button>
+                  )}
+                  <div className={styles.metricSwitch}>
+                    <button
+                      type="button"
+                      className={topicMetric === 'paperCount' ? styles.metricActive : ''}
+                      onClick={() => setTopicMetric('paperCount')}
+                    >
+                      Papers
+                    </button>
+                    <button
+                      type="button"
+                      className={topicMetric === 'citationCount' ? styles.metricActive : ''}
+                      onClick={() => setTopicMetric('citationCount')}
+                    >
+                      Citations
+                    </button>
+                    <button
+                      type="button"
+                      className={topicMetric === 'trendingScore' ? styles.metricActive : ''}
+                      onClick={() => setTopicMetric('trendingScore')}
+                    >
+                      Score
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className={styles.chartWrap}>
@@ -743,18 +870,26 @@ function TrendChartPage() {
                         }
                         contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 10 }}
                       />
-                      {topicSeries.map((series, index) => (
-                        <Line
-                          key={series.id}
-                          type="monotone"
-                          dataKey={`topic_${series.id}`}
-                          name={series.name}
-                          stroke={COLORS[index % COLORS.length]}
-                          strokeWidth={2.5}
-                          connectNulls
-                          dot={{ r: 2.5 }}
-                        />
-                      ))}
+                      {orderSeriesForChart(topicSeries, topicFocusId).map((series, index) => {
+                        const lineProps = getSeriesLineProps(series.id, topicFocusId)
+                        const color =
+                          topicColorMap.get(`id:${series.id}`) ?? COLORS[index % COLORS.length]
+                        return (
+                          <Line
+                            key={series.id}
+                            type="monotone"
+                            dataKey={`topic_${series.id}`}
+                            name={series.name}
+                            stroke={color}
+                            strokeOpacity={lineProps.strokeOpacity}
+                            strokeWidth={lineProps.strokeWidth}
+                            connectNulls
+                            dot={lineProps.dot}
+                            activeDot={lineProps.activeDot}
+                            isAnimationActive={false}
+                          />
+                        )
+                      })}
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
@@ -770,28 +905,39 @@ function TrendChartPage() {
                 <span className={styles.panelEyebrow}>Journals</span>
                 <h2 className={styles.panelTitle}>Journal momentum over time</h2>
               </div>
-              <div className={styles.metricSwitch}>
-                <button
-                  type="button"
-                  className={journalMetric === 'paperCount' ? styles.metricActive : ''}
-                  onClick={() => setJournalMetric('paperCount')}
-                >
-                  Papers
-                </button>
-                <button
-                  type="button"
-                  className={journalMetric === 'citationCount' ? styles.metricActive : ''}
-                  onClick={() => setJournalMetric('citationCount')}
-                >
-                  Citations
-                </button>
-                <button
-                  type="button"
-                  className={journalMetric === 'trendingScore' ? styles.metricActive : ''}
-                  onClick={() => setJournalMetric('trendingScore')}
-                >
-                  Score
-                </button>
+              <div className={styles.chartControls}>
+                {journalFocusId != null && (
+                  <button
+                    type="button"
+                    className={styles.showAllButton}
+                    onClick={() => setJournalFocusId(null)}
+                  >
+                    Show all
+                  </button>
+                )}
+                <div className={styles.metricSwitch}>
+                  <button
+                    type="button"
+                    className={journalMetric === 'paperCount' ? styles.metricActive : ''}
+                    onClick={() => setJournalMetric('paperCount')}
+                  >
+                    Papers
+                  </button>
+                  <button
+                    type="button"
+                    className={journalMetric === 'citationCount' ? styles.metricActive : ''}
+                    onClick={() => setJournalMetric('citationCount')}
+                  >
+                    Citations
+                  </button>
+                  <button
+                    type="button"
+                    className={journalMetric === 'trendingScore' ? styles.metricActive : ''}
+                    onClick={() => setJournalMetric('trendingScore')}
+                  >
+                    Score
+                  </button>
+                </div>
               </div>
             </div>
             <div className={styles.chartWrap}>
@@ -809,18 +955,26 @@ function TrendChartPage() {
                       }
                       contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 10 }}
                     />
-                    {journalSeries.map((series, index) => (
-                      <Line
-                        key={series.id}
-                        type="monotone"
-                        dataKey={`journal_${series.id}`}
-                        name={series.name}
-                        stroke={COLORS[index % COLORS.length]}
-                        strokeWidth={2.5}
-                        connectNulls
-                        dot={{ r: 2.5 }}
-                      />
-                    ))}
+                    {orderSeriesForChart(journalSeries, journalFocusId).map((series, index) => {
+                      const lineProps = getSeriesLineProps(series.id, journalFocusId)
+                      const color =
+                        journalColorMap.get(`id:${series.id}`) ?? COLORS[index % COLORS.length]
+                      return (
+                        <Line
+                          key={series.id}
+                          type="monotone"
+                          dataKey={`journal_${series.id}`}
+                          name={series.name}
+                          stroke={color}
+                          strokeOpacity={lineProps.strokeOpacity}
+                          strokeWidth={lineProps.strokeWidth}
+                          connectNulls
+                          dot={lineProps.dot}
+                          activeDot={lineProps.activeDot}
+                          isAnimationActive={false}
+                        />
+                      )
+                    })}
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
@@ -834,19 +988,34 @@ function TrendChartPage() {
               <div>
                 <span className={styles.panelEyebrow}>Journals</span>
                 <h2 className={styles.panelTitle}>Top journals</h2>
+                <p className={styles.panelHint}>
+                  Click a card to isolate it on the chart. Counts show the peak month in range.
+                </p>
               </div>
             </div>
-            {dashboard.topJournals.length > 0 ? (
+            {journalListItems.length > 0 ? (
               <div className={styles.journalGrid}>
-                {dashboard.topJournals.map((item, index) => {
+                {journalListItems.map((item, index) => {
                   const itemColor =
                     journalColorMap.get(`id:${item.id}`) ?? journalColorMap.get(`name:${item.name}`)
+                  const isSelected = journalFocusId === item.id
+                  const isDimmed = journalFocusId != null && !isSelected
 
                   return (
-                    <Link
+                    <div
                       key={item.id}
-                      to={getEntityLink('journal', item)}
-                      className={styles.journalCard}
+                      role="button"
+                      tabIndex={0}
+                      className={`${styles.journalCard} ${isSelected ? styles.journalCardSelected : ''} ${
+                        isDimmed ? styles.journalCardDimmed : ''
+                      }`}
+                      onClick={() => toggleFocus(journalFocusId, item.id, setJournalFocusId)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          toggleFocus(journalFocusId, item.id, setJournalFocusId)
+                        }
+                      }}
                     >
                       <span className={styles.journalRank}>#{index + 1}</span>
                       <span className={styles.journalTitle}>
@@ -864,9 +1033,16 @@ function TrendChartPage() {
                         <span>{formatNumber(item.citationCount)} citations</span>
                       </div>
                       <small className={getGrowthClass(item.growthRate)}>
-                        {formatGrowth(item.growthRate)} growth / score {Number(item.trendingScore ?? 0).toFixed(2)}
+                        {item.periodLabel || formatPeriod(item)} · {formatGrowth(item.growthRate)}
                       </small>
-                    </Link>
+                      <Link
+                        to={getEntityLink('journal', item)}
+                        className={styles.entityOpenLink}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        Open
+                      </Link>
+                    </div>
                   )
                 })}
               </div>
@@ -882,7 +1058,7 @@ function TrendChartPage() {
   )
 }
 
-function EntityList({ items, type, featuredName, colorMap }) {
+function EntityList({ items, type, selectedId, onSelect, colorMap }) {
   if (!items.length) {
     return <p className={styles.emptyList}>No {type} data available.</p>
   }
@@ -891,12 +1067,24 @@ function EntityList({ items, type, featuredName, colorMap }) {
     <div className={styles.entityList}>
       {items.map((item, index) => {
         const itemColor = colorMap?.get(`id:${item.id}`) ?? colorMap?.get(`name:${item.name}`)
+        const isSelected = selectedId === item.id
+        const isDimmed = selectedId != null && !isSelected
 
         return (
-          <Link
+          <div
             key={item.id}
-            to={getEntityLink(type, item)}
-            className={`${styles.entityItem} ${featuredName === item.name ? styles.entityItemFeatured : ''}`}
+            role="button"
+            tabIndex={0}
+            className={`${styles.entityItem} ${isSelected ? styles.entityItemSelected : ''} ${
+              isDimmed ? styles.entityItemDimmed : ''
+            }`}
+            onClick={() => onSelect?.(item.id)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onSelect?.(item.id)
+              }
+            }}
           >
             <span className={styles.entityRank}>{index + 1}</span>
             <span className={styles.entityBody}>
@@ -910,14 +1098,21 @@ function EntityList({ items, type, featuredName, colorMap }) {
                 )}
                 <strong>{item.name}</strong>
               </span>
-              <small>{formatPeriod(item)}</small>
+              <small>{item.periodLabel || formatPeriod(item)}</small>
             </span>
             <span className={styles.entityMetrics}>
               <span>{formatNumber(item.paperCount)} papers</span>
               <span>{formatNumber(item.citationCount)} citations</span>
               <span className={getGrowthClass(item.growthRate)}>{formatGrowth(item.growthRate)}</span>
+              <Link
+                to={getEntityLink(type, item)}
+                className={styles.entityOpenLink}
+                onClick={(event) => event.stopPropagation()}
+              >
+                Open
+              </Link>
             </span>
-          </Link>
+          </div>
         )
       })}
     </div>

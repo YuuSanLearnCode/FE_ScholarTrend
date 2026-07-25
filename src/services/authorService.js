@@ -8,22 +8,47 @@ function unwrapResponse(response, fallbackMessage) {
   return response.data
 }
 
-export async function getAuthors(params = {}) {
-  const { data: response } = await api.get('/authors', { params })
-  const result = unwrapResponse(response, 'Failed to load authors.')
-
-  const items = Array.isArray(result.items) ? result.items : []
-  
+function mapAuthor(author) {
   return {
-    ...result,
-    items: items.map((author) => ({
-      ...author,
-      name: author.name ?? `Author ${author.id}`,
-      affiliation: author.affiliation ?? '',
-      country: author.country ?? '',
-      paperCount: author.paperCount ?? 0,
-    }))
+    ...author,
+    name: author.name ?? `Author ${author.id}`,
+    affiliation: author.affiliation ?? '',
+    country: author.country ?? '',
+    paperCount: author.paperCount ?? 0,
   }
+}
+
+function normalizePagedAuthors(result) {
+  const items = Array.isArray(result)
+    ? result
+    : Array.isArray(result?.items)
+      ? result.items
+      : []
+
+  const pageSize = result?.pageSize ?? (items.length || 10)
+  const totalCount = result?.totalCount ?? items.length
+
+  return {
+    items: items.map(mapAuthor),
+    totalCount,
+    page: result?.page ?? 1,
+    pageSize,
+    totalPages:
+      result?.totalPages ??
+      (pageSize > 0 ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1),
+  }
+}
+
+export async function getAuthors({ keyword = '', page = 1, pageSize = 10 } = {}) {
+  const { data: response } = await api.get('/authors', {
+    params: {
+      keyword: keyword.trim() || undefined,
+      page,
+      pageSize,
+    },
+  })
+  const result = unwrapResponse(response, 'Failed to load authors.')
+  return normalizePagedAuthors(result)
 }
 
 function normalizeRecentPaper(paper) {
