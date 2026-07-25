@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { aggregatePaperById, getPaperById, recordView } from '../../services/paperService'
+import { aggregatePaperById, getPaperById, recordView, downloadPaperPdf } from '../../services/paperService'
 import { addBookmark, removeBookmark } from '../../services/bookmarkService'
 import {
   followPaper,
   getFollowedPapers,
   unfollowPaper,
 } from '../../services/followService'
+import { downloadFile } from '../../services/fileService'
 import Skeleton from '../../components/Skeleton'
 import styles from './paperDetailPage.module.css'
 
@@ -57,6 +58,8 @@ function PaperDetailPage() {
   const [aggregateLoading, setAggregateLoading] = useState(false)
   const [aggregateError, setAggregateError] = useState('')
   const [isCopied, setIsCopied] = useState(false)
+  const [downloadError, setDownloadError] = useState('')
+  const [downloadLoading, setDownloadLoading] = useState(false)
 
   useEffect(() => {
     async function fetchPaper() {
@@ -197,6 +200,46 @@ function PaperDetailPage() {
     navigate('/search')
   }
 
+  const handleDownloadPdf = async () => {
+    if (!paper) return
+    setDownloadLoading(true)
+    setDownloadError('')
+    try {
+      const blobData = await downloadPaperPdf(paper.id)
+      const url = window.URL.createObjectURL(new Blob([blobData]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `paper-${paper.id}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setDownloadError('Sorry, the PDF file for this paper is not available.')
+      } else {
+        setDownloadError(err.response?.data?.message || 'Failed to download PDF. Please try again later.')
+      }
+    } finally {
+      setDownloadLoading(false)
+    }
+  }
+
+  const handleDownloadCommunityPdf = async (fileId, fileName) => {
+    try {
+      const blobData = await downloadFile(fileId)
+      const url = window.URL.createObjectURL(new Blob([blobData]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', fileName || 'download.pdf')
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+    } catch (err) {
+      setDownloadError('Failed to download the community PDF.')
+    }
+  }
+
   if (loading) {
     return (
       <div className={styles.detailPage}>
@@ -319,9 +362,49 @@ function PaperDetailPage() {
               Open PDF
             </a>
           )}
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={handleDownloadPdf}
+            disabled={downloadLoading}
+          >
+            {downloadLoading ? 'Downloading...' : 'Download PDF'}
+          </button>
         </div>
+
+        {paper.communityPdfs && paper.communityPdfs.length > 0 && (
+          <div className={styles.communityPdfsSection}>
+            <h4 className={styles.communityPdfsTitle}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" width="16" height="16" fill="currentColor">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+              Community Uploaded PDFs
+            </h4>
+            <ul className={styles.communityPdfList}>
+              {paper.communityPdfs.map(pdf => (
+                <li key={pdf.fileId}>
+                  <div className={styles.communityPdfInfo}>
+                    <span className={styles.communityPdfName}>{pdf.fileName}</span>
+                    <span className={styles.communityPdfMeta}>
+                      Uploaded by <strong>{pdf.uploadedByFullName}</strong> on {new Date(pdf.uploadedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <button 
+                    type="button" 
+                    className={styles.communityPdfDownload} 
+                    onClick={() => handleDownloadCommunityPdf(pdf.fileId, pdf.fileName)}
+                  >
+                    Download
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {followError && <p className={styles.followError}>{followError}</p>}
         {bookmarkError && <p className={styles.bookmarkError}>{bookmarkError}</p>}
+        {downloadError && <p className={styles.bookmarkError}>{downloadError}</p>}
       </header>
 
       <section className={styles.metrics}>
@@ -476,15 +559,52 @@ function PaperDetailPage() {
       </section>
 
       <div className={styles.contentGrid}>
-        <section className={styles.panel}>
-          <div className={styles.sectionHeading}>
-            <span>Overview</span>
-            <h2>Abstract</h2>
-          </div>
-          <p className={styles.abstractText}>
-            {paper.abstract || 'No abstract is available for this paper.'}
-          </p>
-        </section>
+        <div className={styles.mainContent}>
+          <section className={styles.panel}>
+            <div className={styles.sectionHeading}>
+              <span>Overview</span>
+              <h2>Abstract</h2>
+            </div>
+            <p className={styles.abstractText}>
+              {paper.abstract || 'No abstract is available for this paper.'}
+            </p>
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.sectionHeading}>
+              <span>AI Insights</span>
+              <h2>Paper Analysis (Gaps)</h2>
+            </div>
+            
+            {(!paper.limitations || paper.limitations.length === 0) && (!paper.futureWorks || paper.futureWorks.length === 0) ? (
+              <p className={styles.mutedText}>No gap analysis data available yet.</p>
+            ) : (
+              <div className={styles.gapsContainer}>
+                {paper.limitations && paper.limitations.length > 0 && (
+                  <div className={styles.gapSection}>
+                    <h3>Limitations</h3>
+                    <ul className={styles.gapList}>
+                      {paper.limitations.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {paper.futureWorks && paper.futureWorks.length > 0 && (
+                  <div className={styles.gapSection}>
+                    <h3>Future Works</h3>
+                    <ul className={styles.gapList}>
+                      {paper.futureWorks.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
 
         <aside className={styles.sidebar}>
           <section className={styles.panel}>
