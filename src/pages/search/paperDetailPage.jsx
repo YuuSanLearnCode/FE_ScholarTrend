@@ -315,7 +315,7 @@ function PaperDetailPage() {
             </a>
           )}
           {pdfUrl && (
-            <a className={styles.pdfButton} href={pdfUrl} target="_blank" rel="noreferrer">
+            <a className={styles.secondaryButton} href={pdfUrl} target="_blank" rel="noreferrer">
               Open PDF
             </a>
           )}
