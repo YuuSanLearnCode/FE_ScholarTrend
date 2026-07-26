@@ -26,19 +26,39 @@ function normalizeGapId(id) {
   return gapId
 }
 
-export async function getTopics(params = {}) {
-  const { data: response } = await api.get('/topics', { params })
+export async function getTopics({ keyword = '', page = 1, pageSize = 12 } = {}) {
+  const { data: response } = await api.get('/topics', {
+    params: {
+      keyword: keyword.trim() || undefined,
+      page,
+      pageSize,
+    },
+  })
   const result = unwrapResponse(response, 'Failed to load topics.')
 
-  const items = Array.isArray(result.items) ? result.items : []
+  const items = Array.isArray(result)
+    ? result
+    : Array.isArray(result?.items)
+      ? result.items
+      : []
+
+  const mapped = items.map((topic) => ({
+    ...topic,
+    name: topic.topicName ?? topic.name ?? `Topic ${topic.id}`,
+    paperCount: topic.paperCount ?? 0,
+  }))
+
+  const resolvedPageSize = result?.pageSize ?? (mapped.length || pageSize)
+  const totalCount = result?.totalCount ?? mapped.length
 
   return {
-    ...result,
-    items: items.map((topic) => ({
-      ...topic,
-      name: topic.topicName ?? topic.name ?? `Topic ${topic.id}`,
-      paperCount: topic.paperCount ?? 0,
-    }))
+    items: mapped,
+    totalCount,
+    page: result?.page ?? page,
+    pageSize: resolvedPageSize,
+    totalPages:
+      result?.totalPages ??
+      (resolvedPageSize > 0 ? Math.max(1, Math.ceil(totalCount / resolvedPageSize)) : 1),
   }
 }
 

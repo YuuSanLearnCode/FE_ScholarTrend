@@ -9,19 +9,20 @@ const PAGE_SIZE = 12
 
 function TopicsPage() {
   const [topics, setTopics] = useState([])
-  const [totalCount, setTotalCount] = useState(0)
   const [query, setQuery] = useState('')
-  const [debouncedQuery, setDebouncedQuery] = useState('')
+  const [submittedQuery, setSubmittedQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedQuery(query)
-      setPage(1) // Reset to page 1 on new search
-    }, 500)
-    return () => clearTimeout(handler)
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setSubmittedQuery(query.trim())
+    }, 350)
+    return () => window.clearTimeout(timer)
   }, [query])
 
   useEffect(() => {
@@ -29,16 +30,23 @@ function TopicsPage() {
 
     async function fetchTopics() {
       setLoading(true)
+      setError('')
       try {
-        const result = await getTopics({ keyword: debouncedQuery, page, pageSize: PAGE_SIZE })
-        if (active) {
-          setTopics(result.items || [])
-          setTotalCount(result.totalCount || 0)
-        }
+        const result = await getTopics({
+          keyword: submittedQuery,
+          page,
+          pageSize: PAGE_SIZE,
+        })
+        if (!active) return
+        setTopics(result.items)
+        setTotalCount(result.totalCount)
+        setTotalPages(Math.max(1, result.totalPages || 1))
       } catch (err) {
         if (active) {
           setError(err.response?.data?.message || err.message || 'Failed to load topics.')
           setTopics([])
+          setTotalCount(0)
+          setTotalPages(1)
         }
       } finally {
         if (active) setLoading(false)
@@ -49,11 +57,12 @@ function TopicsPage() {
     return () => {
       active = false
     }
-  }, [debouncedQuery, page])
+  }, [page, submittedQuery])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
-  const totalPapers = topics.reduce((sum, topic) => sum + (topic.paperCount ?? 0), 0)
+  const totalPapers = useMemo(
+    () => topics.reduce((sum, topic) => sum + (topic.paperCount ?? 0), 0),
+    [topics],
+  )
 
   const handleSearchChange = (event) => {
     setQuery(event.target.value)
@@ -74,7 +83,7 @@ function TopicsPage() {
           </span>
           <span>
             <strong>{totalPapers}</strong>
-            Papers
+            Papers on this page
           </span>
         </div>
       </header>
@@ -102,7 +111,11 @@ function TopicsPage() {
       ) : error ? (
         <div className={styles.error}>{error}</div>
       ) : topics.length === 0 ? (
-        <div className={styles.empty}>No topics found matching "{query}".</div>
+        <div className={styles.empty}>
+          {submittedQuery
+            ? `No topics found matching "${submittedQuery}".`
+            : 'No topics available yet.'}
+        </div>
       ) : (
         <>
           <div className={styles.grid}>
@@ -130,7 +143,7 @@ function TopicsPage() {
 
           {totalPages > 1 && (
             <Pagination
-              page={currentPage}
+              page={page}
               totalPages={totalPages}
               onPageChange={setPage}
             />
