@@ -261,7 +261,21 @@ export async function runTopicGapAnalysisPipeline(topicId) {
   )
 
   if (response && typeof response === 'object' && 'success' in response) {
-    return unwrapResponse(response, 'Failed to run topic gap analysis pipeline.')
+    return unwrapResponse(response, 'Failed to enqueue topic gap analysis pipeline.')
+  }
+
+  return response
+}
+
+export async function getTopicGapAnalysisPipelineJob(jobId) {
+  if (!jobId) throw new Error('Missing pipeline job id.')
+
+  const { data: response } = await api.get(
+    `/admin/gap-analysis/pipeline/jobs/${encodeURIComponent(jobId)}`,
+  )
+
+  if (response && typeof response === 'object' && 'success' in response) {
+    return unwrapResponse(response, 'Failed to get pipeline job status.')
   }
 
   return response
@@ -485,10 +499,23 @@ export async function migratePdfsToB2() {
   return unwrapResponse(response, 'Failed to migrate PDFs to B2.')
 }
 
-export async function getPdfStorageList(limit = 50) {
-  const { data: response } = await api.get(`/admin/migrations/pdfs`, {
-    params: { limit }
-  })
+export async function getPdfStorageList({
+  page = 1,
+  pageSize = 20,
+  search = '',
+  status = 'all',
+  limit,
+} = {}) {
+  const params = {
+    page,
+    pageSize,
+  }
+  if (search) params.search = search
+  if (status && status !== 'all') params.status = status
+  // Legacy fallback
+  if (limit) params.limit = limit
+
+  const { data: response } = await api.get(`/admin/migrations/pdfs`, { params })
   return unwrapResponse(response, 'Failed to get PDF storage list.')
 }
 

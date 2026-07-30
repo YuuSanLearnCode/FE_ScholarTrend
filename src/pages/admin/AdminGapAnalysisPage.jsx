@@ -10,6 +10,7 @@ import {
   mineTopicGapAnalysisPatterns,
   regenerateTopicGapAnalysisGaps,
   runTopicGapAnalysisPipeline,
+  getTopicGapAnalysisPipelineJob,
 } from "../../services/adminService";
 import {
   getTopicPatterns,
@@ -265,9 +266,40 @@ function AdminGapAnalysisPage() {
     setPipelineResult("");
 
     try {
-      const result = await runTopicGapAnalysisPipeline(pipelineTopicId);
-      setPipelineResult(formatResult(result));
-      addRunHistory(`Run pipeline topic #${Number(pipelineTopicId)}`, result);
+      const queued = await runTopicGapAnalysisPipeline(pipelineTopicId);
+      const jobId = queued?.jobId;
+      if (!jobId) {
+        setPipelineResult(formatResult(queued));
+        addRunHistory(`Run pipeline topic #${Number(pipelineTopicId)}`, queued);
+        return;
+      }
+
+      setPipelineResult(
+        `Pipeline queued (job ${jobId}). Running in background…\n${formatResult(queued)}`,
+      );
+
+      const started = Date.now();
+      const maxWaitMs = 15 * 60 * 1000;
+
+      while (Date.now() - started < maxWaitMs) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const status = await getTopicGapAnalysisPipelineJob(jobId);
+        const line = `[${status?.status ?? "?"}] ${status?.message ?? ""}`;
+        setPipelineResult(line);
+
+        if (status?.status === "Completed") {
+          setPipelineResult(formatResult(status));
+          addRunHistory(`Run pipeline topic #${Number(pipelineTopicId)}`, status);
+          return;
+        }
+        if (status?.status === "Failed") {
+          setPipelineError(status?.message || "Pipeline failed.");
+          addRunHistory(`Run pipeline topic #${Number(pipelineTopicId)} (failed)`, status);
+          return;
+        }
+      }
+
+      setPipelineError("Pipeline is still running in background (timeout waiting on UI). Check Hangfire or poll again later.");
     } catch (error) {
       setPipelineError(
         getErrorMessage(error, "Could not run the gap analysis pipeline for this topic."),
@@ -419,7 +451,7 @@ function AdminGapAnalysisPage() {
               className={styles.primaryButton}
               disabled={pipelineLoading}
             >
-              {pipelineLoading ? "Running pipeline..." : "Run topic pipeline"}
+              {pipelineLoading ? "Pipeline running (background)…" : "Run topic pipeline"}
             </button>
           </form>
 

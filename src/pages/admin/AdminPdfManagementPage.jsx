@@ -1,18 +1,20 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   backfillPdfText,
   extractPdfTextForPaper,
   extractPdfTextBatch,
   getPdfStorageList,
+  retryFailedDownloads,
 } from "../../services/adminService";
+import Pagination from "../../components/Pagination";
 import styles from "./AdminPdfManagementPage.module.css";
 
 const STATUS_FILTER_OPTIONS = [
   { value: "all", label: "All papers" },
-  { value: "ready", label: "📄 PDF ready (not extracted)" },
-  { value: "extracted", label: "✅ Text extracted" },
-  { value: "failed", label: "❌ Failed" },
-  { value: "pending", label: "⏳ Pending" },
+  { value: "ready", label: "Ready (not extracted)" },
+  { value: "extracted", label: "Extracted" },
+  { value: "failed", label: "Failed" },
+  { value: "pending", label: "Pending" },
 ];
 
 function formatBytes(bytes) {
@@ -32,65 +34,80 @@ function getErrorMessage(error) {
 }
 
 export default function AdminPdfManagementPage() {
-  // ── Table data ──
   const [papers, setPapers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [statusSummary, setStatusSummary] = useState({});
   const [tableLoading, setTableLoading] = useState(true);
   const [tableError, setTableError] = useState("");
+
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
-  // ── Selection ──
   const [selected, setSelected] = useState(new Set());
 
-  // ── Action states ──
   const [actionLoading, setActionLoading] = useState(false);
   const [actionResult, setActionResult] = useState(null);
   const [actionError, setActionError] = useState("");
 
-  // ── Backfill ──
   const [backfillLoading, setBackfillLoading] = useState(false);
   const [backfillResult, setBackfillResult] = useState(null);
   const [backfillError, setBackfillError] = useState("");
   const [backfillMax, setBackfillMax] = useState(200);
 
-  // ─── Load papers list ────────────────────────────────────────────
+  const [retryLoading, setRetryLoading] = useState(false);
+  const [retryResult, setRetryResult] = useState(null);
+  const [retryError, setRetryError] = useState("");
+
+  const searchTimer = useRef(null);
+
+  // Debounce search → reset to page 1
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 350);
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current);
+    };
+  }, [searchInput]);
+
   const loadPapers = useCallback(async () => {
     setTableLoading(true);
     setTableError("");
     try {
-      const res = await getPdfStorageList(500);
-      // res = { totalCount, statusSummary, items: PdfStorageStatusDto[] }
+      const res = await getPdfStorageList({
+        page,
+        pageSize,
+        search,
+        status: statusFilter,
+      });
+      const count = res.totalCount ?? 0;
+      const maxPage = Math.max(1, Math.ceil(count / pageSize));
+      if (page > maxPage) {
+        setPage(maxPage);
+        return;
+      }
       setPapers(res.items ?? []);
+      setTotalCount(count);
+      setStatusSummary(res.statusSummary ?? {});
+      setSelected(new Set());
     } catch (err) {
       setTableError(getErrorMessage(err));
     } finally {
       setTableLoading(false);
     }
-  }, []);
+  }, [page, pageSize, search, statusFilter]);
 
   useEffect(() => {
     loadPapers();
   }, [loadPapers]);
 
-  // ─── Filtering ───────────────────────────────────────────────────
-  const filteredPapers = papers.filter((p) => {
-    const matchSearch =
-      !search ||
-      p.paperTitle?.toLowerCase().includes(search.toLowerCase()) ||
-      String(p.researchPaperId).includes(search);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-    const st = p.status?.toLowerCase();
-    const matchStatus =
-      statusFilter === "all" ||
-      (statusFilter === "ready" && st === "ready") ||
-      (statusFilter === "extracted" && p.textExtracted) ||
-      (statusFilter === "failed" && st === "failed") ||
-      (statusFilter === "pending" && st !== "ready" && st !== "failed");
-
-    return matchSearch && matchStatus;
-  });
-
-  // ─── Selection helpers ───────────────────────────────────────────
   function toggleOne(id) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -100,14 +117,13 @@ export default function AdminPdfManagementPage() {
   }
 
   function toggleAll() {
-    if (selected.size === filteredPapers.length) {
+    if (selected.size === papers.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(filteredPapers.map((p) => p.researchPaperId)));
+      setSelected(new Set(papers.map((p) => p.researchPaperId)));
     }
   }
 
-  // ─── Extract selected ────────────────────────────────────────────
   async function handleExtractSelected() {
     if (selected.size === 0) return;
     setActionLoading(true);
@@ -143,7 +159,6 @@ export default function AdminPdfManagementPage() {
     }
   }
 
-  // ─── Backfill all ────────────────────────────────────────────────
   async function handleBackfill() {
     setBackfillLoading(true);
     setBackfillResult(null);
@@ -159,20 +174,14 @@ export default function AdminPdfManagementPage() {
     }
   }
 
-  // ─── Retry failed downloads ────────────────────────────────────────
-  const [retryLoading, setRetryLoading] = useState(false);
-  const [retryResult, setRetryResult] = useState(null);
-  const [retryError, setRetryError] = useState("");
-  
   async function handleRetryFailed() {
     setRetryLoading(true);
     setRetryResult(null);
     setRetryError("");
     try {
-      const { retryFailedDownloads } = await import('../../services/adminService');
       const res = await retryFailedDownloads();
       setRetryResult(res);
-      loadPapers(); // reload list to see status change to Queued
+      loadPapers();
     } catch (err) {
       setRetryError(getErrorMessage(err));
     } finally {
@@ -180,25 +189,31 @@ export default function AdminPdfManagementPage() {
     }
   }
 
-  // ─── Status badge ────────────────────────────────────────────────
-  function StatusBadge({ status }) {
-    const st = status?.toLowerCase();
+  function StatusBadge({ status, textExtracted }) {
+    if (textExtracted) {
+      return <span className={styles.badgeExtracted}>Extracted</span>;
+    }
+    const st = (status || "").toLowerCase();
     if (st === "ready") return <span className={styles.badgeReady}>Ready</span>;
-    if (st === "failed") return <span className={styles.badgeFailed}>Failed</span>;
-    if (st === "downloading") return <span className={styles.badgePending}>Downloading…</span>;
-    return <span className={styles.badgePending}>{status || "Unknown"}</span>;
+    if (st === "failed" || st === "skipped") {
+      return <span className={styles.badgeFailed}>Failed</span>;
+    }
+    return <span className={styles.badgePending}>Pending</span>;
   }
 
-  const allSelected =
-    filteredPapers.length > 0 && selected.size === filteredPapers.length;
-  const someSelected = selected.size > 0 && selected.size < filteredPapers.length;
+  const allSelected = papers.length > 0 && selected.size === papers.length;
+  const someSelected = selected.size > 0 && selected.size < papers.length;
 
-  const readyCount = papers.filter((p) => p.status?.toLowerCase() === "ready").length;
-  const failedCount = papers.filter((p) => p.status?.toLowerCase() === "failed").length;
+  const extractedCount = statusSummary.ExtractedText ?? 0;
+  const readyCount = Math.max(0, (statusSummary.Ready ?? 0) - extractedCount);
+  const failedCount = (statusSummary.Failed ?? 0) + (statusSummary.Skipped ?? 0);
+  const pendingCount = Object.entries(statusSummary)
+    .filter(([k]) => !["Ready", "Failed", "Skipped", "ExtractedText"].includes(k))
+    .reduce((sum, [, n]) => sum + (Number(n) || 0), 0);
+  const totalPdfs = (statusSummary.Ready ?? 0) + failedCount + pendingCount;
 
   return (
     <div className={styles.page}>
-      {/* ── Hero ── */}
       <div className={styles.hero}>
         <div>
           <p className={styles.kicker}>PDF Management</p>
@@ -209,7 +224,6 @@ export default function AdminPdfManagementPage() {
           </p>
         </div>
 
-        {/* Backfill button */}
         <div className={styles.backfillArea}>
           <div className={styles.backfillRow}>
             <label className={styles.backfillLabel} htmlFor="backfillMax">
@@ -241,7 +255,7 @@ export default function AdminPdfManagementPage() {
               onClick={handleRetryFailed}
               disabled={retryLoading}
               title="Reset all failed PDF downloads so the system can retry downloading them"
-              style={{ backgroundColor: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+              style={{ backgroundColor: "var(--color-danger)", borderColor: "var(--color-danger)" }}
             >
               {retryLoading ? (
                 <><span className={styles.spinner} /> Retrying…</>
@@ -258,54 +272,73 @@ export default function AdminPdfManagementPage() {
             </div>
           )}
           {retryResult && (
-            <div className={styles.backfillSuccess} style={{ color: 'var(--color-brand)' }}>
+            <div className={styles.backfillSuccess} style={{ color: "var(--color-brand)" }}>
               ✓ Reset {retryResult.retryCount ?? 0} failed PDFs to Queued status. They will be downloaded shortly.
             </div>
           )}
-          {backfillError && (
-            <div className={styles.errorInline}>{backfillError}</div>
-          )}
-          {retryError && (
-            <div className={styles.errorInline}>{retryError}</div>
-          )}
+          {backfillError && <div className={styles.errorInline}>{backfillError}</div>}
+          {retryError && <div className={styles.errorInline}>{retryError}</div>}
         </div>
       </div>
 
-      {/* ── Summary chips ── */}
       <div className={styles.summaryRow}>
         <div className={styles.chip} data-color="blue">
-          <span className={styles.chipValue}>{papers.length}</span>
+          <span className={styles.chipValue}>{totalPdfs}</span>
           <span className={styles.chipLabel}>Total PDFs</span>
         </div>
         <div className={styles.chip} data-color="green">
           <span className={styles.chipValue}>{readyCount}</span>
           <span className={styles.chipLabel}>Ready</span>
         </div>
+        <div className={styles.chip} data-color="teal">
+          <span className={styles.chipValue}>{extractedCount}</span>
+          <span className={styles.chipLabel}>Extracted</span>
+        </div>
         <div className={styles.chip} data-color="red">
           <span className={styles.chipValue}>{failedCount}</span>
           <span className={styles.chipLabel}>Failed</span>
         </div>
+        <div className={styles.chip} data-color="amber">
+          <span className={styles.chipValue}>{pendingCount}</span>
+          <span className={styles.chipLabel}>Pending</span>
+        </div>
       </div>
 
-      {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
         <input
           id="paperSearch"
           className={styles.searchInput}
           type="search"
           placeholder="Search by title or ID…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
         />
         <select
           id="statusFilter"
           className={styles.filterSelect}
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
         >
           {STATUS_FILTER_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
+        </select>
+        <select
+          className={styles.filterSelect}
+          aria-label="Items per page"
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setPage(1);
+          }}
+        >
+          <option value="10">10 / page</option>
+          <option value="20">20 / page</option>
+          <option value="50">50 / page</option>
+          <option value="100">100 / page</option>
         </select>
 
         {selected.size > 0 && (
@@ -333,7 +366,6 @@ export default function AdminPdfManagementPage() {
         </button>
       </div>
 
-      {/* ── Action result ── */}
       {actionResult && (
         <div className={styles.actionSuccess}>
           <span className={styles.successDot}>✓</span>
@@ -352,11 +384,8 @@ export default function AdminPdfManagementPage() {
           )}
         </div>
       )}
-      {actionError && (
-        <div className={styles.errorBox}>{actionError}</div>
-      )}
+      {actionError && <div className={styles.errorBox}>{actionError}</div>}
 
-      {/* ── Table ── */}
       <div className={styles.tableWrapper}>
         {tableLoading ? (
           <div className={styles.tableLoading}>
@@ -364,7 +393,7 @@ export default function AdminPdfManagementPage() {
           </div>
         ) : tableError ? (
           <div className={styles.errorBox}>{tableError}</div>
-        ) : filteredPapers.length === 0 ? (
+        ) : papers.length === 0 ? (
           <div className={styles.emptyState}>
             <p>No papers match your filters.</p>
           </div>
@@ -380,7 +409,7 @@ export default function AdminPdfManagementPage() {
                       if (el) el.indeterminate = someSelected;
                     }}
                     onChange={toggleAll}
-                    aria-label="Select all"
+                    aria-label="Select all on this page"
                   />
                 </th>
                 <th className={styles.thId}>ID</th>
@@ -391,7 +420,7 @@ export default function AdminPdfManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredPapers.map((paper) => (
+              {papers.map((paper) => (
                 <tr
                   key={paper.researchPaperId}
                   className={
@@ -424,7 +453,10 @@ export default function AdminPdfManagementPage() {
                     )}
                   </td>
                   <td className={styles.tdStatus}>
-                    <StatusBadge status={paper.status} />
+                    <StatusBadge
+                      status={paper.status}
+                      textExtracted={paper.textExtracted}
+                    />
                   </td>
                   <td className={styles.tdSize}>{formatBytes(paper.sizeBytes)}</td>
                   <td
@@ -468,10 +500,17 @@ export default function AdminPdfManagementPage() {
         )}
       </div>
 
-      <p className={styles.tableFooter}>
-        Showing {filteredPapers.length} of {papers.length} papers
-        {selected.size > 0 && ` — ${selected.size} selected`}
-      </p>
+      <div className={styles.paginationBar}>
+        <p className={styles.tableFooter}>
+          Page {page} / {totalPages} — showing {papers.length} of {totalCount} papers
+          {selected.size > 0 && ` — ${selected.size} selected on this page`}
+        </p>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
+      </div>
     </div>
   );
 }

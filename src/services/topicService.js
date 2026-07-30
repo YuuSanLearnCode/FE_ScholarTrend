@@ -151,6 +151,7 @@ function normalizeTopicGapEvidence(evidence = {}) {
 export async function getTopicGaps(id) {
   const topicId = normalizeTopicId(id)
 
+  // Read-only cached report (no AI on GET)
   const { data: response } = await api.get(`/topics/${topicId}/gaps`)
   const result = unwrapResponse(response, 'Failed to load topic gaps.')
 
@@ -171,7 +172,36 @@ export async function getTopicGaps(id) {
       timeline: Array.isArray(result.timeline?.timeline) ? result.timeline.timeline : [],
     },
     generatedAt: result.generatedAt ?? null,
+    source: result.source ?? 'cache',
+    needsGeneration: Boolean(result.needsGeneration),
+    isStale: Boolean(result.isStale),
+    staleReason: result.staleReason ?? null,
+    analysisCount: result.analysisCount ?? 0,
+    sampleSize: result.sampleSize ?? 0,
+    analyzedInSample: result.analyzedInSample ?? 0,
+    sampleCoverageLevel: result.sampleCoverageLevel ?? 'Low',
+    sampleCoverageLabel: result.sampleCoverageLabel ?? '',
+    sampleCoverageMessage: result.sampleCoverageMessage ?? null,
   }
+}
+
+export async function requestTopicGapGeneration(id, { force = false } = {}) {
+  const topicId = normalizeTopicId(id)
+  const { data: response } = await api.post(`/topics/${topicId}/gaps/generate`, null, {
+    params: { force },
+  })
+  return unwrapResponse(response, 'Failed to enqueue gap generation.')
+}
+
+export async function getTopicGapGenerationJob(jobId) {
+  const { data: response } = await api.get(`/topics/gaps/jobs/${jobId}`)
+  return unwrapResponse(response, 'Failed to load gap generation job status.')
+}
+
+export async function getLatestTopicGapGenerationJob(id) {
+  const topicId = normalizeTopicId(id)
+  const { data: response } = await api.get(`/topics/${topicId}/gaps/jobs/latest`)
+  return unwrapResponse(response, 'Failed to load latest gap generation job.')
 }
 
 export async function getTopicGapList(id) {
