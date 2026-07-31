@@ -92,8 +92,8 @@ function AdminGapAnalysisPage() {
   const [topicsLoading, setTopicsLoading] = useState(true);
 
   useEffect(() => {
-    getTopics()
-      .then(result => setTopics(result || []))
+    getTopics({ pageSize: 100 })
+      .then((result) => setTopics(result?.items || []))
       .catch(console.error)
       .finally(() => setTopicsLoading(false));
   }, []);
