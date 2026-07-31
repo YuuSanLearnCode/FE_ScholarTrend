@@ -418,84 +418,63 @@ function AdminGapAnalysisPage() {
       </header>
 
       <div className={styles.sectionIntro}>
-        <span className={styles.kicker}>Analysis Reports</span>
-        <h3>View Generated Topic Reports</h3>
+        <span className={styles.kicker}>Quality assessment</span>
+        <h3>Validate gap-analysis data</h3>
       </div>
 
       <div className={styles.actionGrid}>
-        <article className={`${styles.card} ${styles.wideCard}`}>
+        <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <h3>Fetch Topic Data</h3>
+              <h3>Assess all topics</h3>
             </div>
           </div>
+
           <p className={styles.cardText}>
-            View the extracted gap trends, patterns, coverage, and quality for a topic.
+            Run quality assessment for all available gap-analysis outputs.
           </p>
 
-          <div className={styles.topicForm} style={{ alignItems: 'flex-end', marginBottom: '16px' }}>
-            <label>
-              Topic ID
-              <select
-                value={reportTopicId}
-                onChange={(event) => setReportTopicId(event.target.value)}
-                disabled={reportLoading || topicsLoading}
-              >
-                <option value="">-- Select a topic --</option>
-                {topics.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Gap Trends", getTopicGapTrends)}>Trends</button>
-              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Patterns", getTopicPatterns)}>Patterns</button>
-              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Coverage", getTopicCoverage)}>Coverage</button>
-              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Quality", getTopicQuality)}>Quality</button>
-            </div>
-          </div>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={handleAssessAll}
+            disabled={globalLoading}
+          >
+            {globalLoading ? "Running assessment..." : "Run global assessment"}
+          </button>
 
-          {reportError && (
+          {globalError && (
             <div className={styles.errorBox} role="alert">
-              {reportError}
+              {globalError}
             </div>
           )}
 
-          {reportResult && (
+          {globalResult && (
             <div className={styles.resultBox}>
-              <span>Report Data</span>
-              <pre>{reportResult}</pre>
+              <span>Response</span>
+              <pre>{globalResult}</pre>
             </div>
           )}
         </article>
-      </div>
 
-      <div className={styles.sectionIntro}>
-        <span className={styles.kicker}>Full pipeline</span>
-        <h3>Run every step for one topic</h3>
-      </div>
-
-      <div className={styles.actionGrid}>
-        <article className={`${styles.card} ${styles.wideCard}`}>
+        <article className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <h3>Run topic pipeline</h3>
+              <h3>Assess by topic</h3>
             </div>
           </div>
 
           <p className={styles.cardText}>
-            Execute the complete gap-analysis pipeline for one selected topic.
+            Run quality assessment for one selected topic.
           </p>
 
-          <form className={styles.topicForm} onSubmit={handleRunPipelineTopic}>
+          <form className={styles.topicForm} onSubmit={handleAssessTopic}>
             <label>
               Topic ID
               <select
-                value={pipelineTopicId}
-                onChange={(event) => setPipelineTopicId(event.target.value)}
-                disabled={pipelineLoading || topicsLoading}
+                value={topicId}
+                onChange={(event) => setTopicId(event.target.value)}
+                disabled={topicLoading || topicsLoading}
               >
                 <option value="">-- Select a topic --</option>
                 {topics.map((t) => (
@@ -505,25 +484,21 @@ function AdminGapAnalysisPage() {
                 ))}
               </select>
             </label>
-            <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={pipelineLoading}
-            >
-              {pipelineLoading ? "Pipeline running (background)…" : "Run topic pipeline"}
+            <button type="submit" className={styles.secondaryButton} disabled={topicLoading}>
+              {topicLoading ? "Running..." : "Run topic assessment"}
             </button>
           </form>
 
-          {pipelineError && (
+          {topicError && (
             <div className={styles.errorBox} role="alert">
-              {pipelineError}
+              {topicError}
             </div>
           )}
 
-          {pipelineResult && (
+          {topicResult && (
             <div className={styles.resultBox}>
               <span>Response</span>
-              <pre>{pipelineResult}</pre>
+              <pre>{topicResult}</pre>
             </div>
           )}
         </article>
@@ -615,6 +590,116 @@ function AdminGapAnalysisPage() {
             <div className={styles.resultBox}>
               <span>Response</span>
               <pre>{extractTopicResult}</pre>
+            </div>
+          )}
+        </article>
+      </div>
+
+      <div className={styles.sectionIntro}>
+        <span className={styles.kicker}>Force extract</span>
+        <h3>Force AI to analyze a specific paper</h3>
+      </div>
+
+      <div className={styles.actionGrid}>
+        <article className={`${styles.card} ${styles.wideCard}`}>
+          <div className={styles.cardHeader}>
+            <div>
+              <h3>Force AI Extract — Search by paper title</h3>
+            </div>
+          </div>
+
+          <p className={styles.cardText}>
+            Ép AI đọc và phân tích ngay bài báo bất kỳ. Tìm theo tên bài báo, chọn đúng bài, sau đó bấm Force AI Extract.
+          </p>
+
+          <form className={styles.topicForm} onSubmit={handleForceAiExtractPaper}>
+            <label style={{ flex: 1, position: "relative" }}>
+              Tìm bài báo
+              <input
+                type="text"
+                placeholder="Nhập tên bài báo..."
+                value={forceAiSearch}
+                onChange={handleForceAiSearchChange}
+                disabled={forceAiLoading}
+                autoComplete="off"
+                style={{ width: "100%" }}
+              />
+              {forceAiSearchLoading && (
+                <span style={{ position: "absolute", right: "10px", top: "50%", fontSize: "0.75rem", color: "#94a3b8" }}>Đang tìm…</span>
+              )}
+              {forceAiSearchResults.length > 0 && (
+                <ul style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  zIndex: 999,
+                  background: "var(--color-surface, #1e293b)",
+                  border: "1px solid var(--color-border, #334155)",
+                  borderRadius: "8px",
+                  maxHeight: "240px",
+                  overflowY: "auto",
+                  margin: "4px 0 0",
+                  padding: 0,
+                  listStyle: "none",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                }}>
+                  {forceAiSearchResults.map((paper) => (
+                    <li
+                      key={paper.id}
+                      onClick={() => handleForceAiSelectPaper(paper)}
+                      style={{
+                        padding: "10px 14px",
+                        cursor: "pointer",
+                        borderBottom: "1px solid var(--color-border, #334155)",
+                        fontSize: "0.82rem",
+                        lineHeight: 1.4,
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(99,102,241,0.15)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    >
+                      <strong style={{ display: "block" }}>{paper.title}</strong>
+                      <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                        {paper.year} · {paper.authors?.[0] ?? "Unknown"}{paper.authors?.length > 1 ? ` +${paper.authors.length - 1}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </label>
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={forceAiLoading || !forceAiSelectedPaper}
+            >
+              {forceAiLoading ? "🤖 AI đang đọc…" : "🤖 Force AI Extract"}
+            </button>
+          </form>
+
+          {forceAiSelectedPaper && !forceAiResult && (
+            <p style={{ marginTop: "8px", fontSize: "0.8rem", color: "#6366f1", fontWeight: 600 }}>
+              ✓ Đã chọn: <em>{forceAiSelectedPaper.title}</em> (ID: {forceAiSelectedPaper.id})
+            </p>
+          )}
+
+          {forceAiError && (
+            <div className={styles.errorBox} role="alert">
+              {forceAiError}
+            </div>
+          )}
+
+          {forceAiResult && (
+            <div className={styles.resultBox}>
+              <span>Kết quả</span>
+              <pre style={{ whiteSpace: "pre-wrap" }}>
+{`✓ Paper #${forceAiResult.paperId}: ${forceAiResult.title}
+Confidence : ${forceAiResult.confidence}%
+Problem    : ${forceAiResult.researchProblem || "—"}
+Methods    : ${(forceAiResult.methods ?? []).join(", ") || "—"}
+Datasets   : ${(forceAiResult.datasets ?? []).join(", ") || "—"}
+Limitations: ${(forceAiResult.limitations ?? []).slice(0, 3).join(" | ") || "—"}
+Future Work: ${(forceAiResult.futureWork ?? []).slice(0, 2).join(" | ") || "—"}`}
+              </pre>
             </div>
           )}
         </article>
@@ -853,63 +938,29 @@ function AdminGapAnalysisPage() {
       </div>
 
       <div className={styles.sectionIntro}>
-        <span className={styles.kicker}>Quality assessment</span>
-        <h3>Validate gap-analysis data</h3>
+        <span className={styles.kicker}>Full pipeline</span>
+        <h3>Run every step for one topic</h3>
       </div>
 
       <div className={styles.actionGrid}>
-        <article className={styles.card}>
+        <article className={`${styles.card} ${styles.wideCard}`}>
           <div className={styles.cardHeader}>
             <div>
-              <h3>Assess all topics</h3>
+              <h3>Run topic pipeline</h3>
             </div>
           </div>
 
           <p className={styles.cardText}>
-            Run quality assessment for all available gap-analysis outputs.
+            Execute the complete gap-analysis pipeline for one selected topic.
           </p>
 
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={handleAssessAll}
-            disabled={globalLoading}
-          >
-            {globalLoading ? "Running assessment..." : "Run global assessment"}
-          </button>
-
-          {globalError && (
-            <div className={styles.errorBox} role="alert">
-              {globalError}
-            </div>
-          )}
-
-          {globalResult && (
-            <div className={styles.resultBox}>
-              <span>Response</span>
-              <pre>{globalResult}</pre>
-            </div>
-          )}
-        </article>
-
-        <article className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <h3>Assess by topic</h3>
-            </div>
-          </div>
-
-          <p className={styles.cardText}>
-            Run quality assessment for one selected topic.
-          </p>
-
-          <form className={styles.topicForm} onSubmit={handleAssessTopic}>
+          <form className={styles.topicForm} onSubmit={handleRunPipelineTopic}>
             <label>
               Topic ID
               <select
-                value={topicId}
-                onChange={(event) => setTopicId(event.target.value)}
-                disabled={topicLoading || topicsLoading}
+                value={pipelineTopicId}
+                onChange={(event) => setPipelineTopicId(event.target.value)}
+                disabled={pipelineLoading || topicsLoading}
               >
                 <option value="">-- Select a topic --</option>
                 {topics.map((t) => (
@@ -919,131 +970,80 @@ function AdminGapAnalysisPage() {
                 ))}
               </select>
             </label>
-            <button type="submit" className={styles.secondaryButton} disabled={topicLoading}>
-              {topicLoading ? "Running..." : "Run topic assessment"}
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={pipelineLoading}
+            >
+              {pipelineLoading ? "Pipeline running (background)…" : "Run topic pipeline"}
             </button>
           </form>
 
-          {topicError && (
+          {pipelineError && (
             <div className={styles.errorBox} role="alert">
-              {topicError}
+              {pipelineError}
             </div>
           )}
 
-          {topicResult && (
+          {pipelineResult && (
             <div className={styles.resultBox}>
               <span>Response</span>
-              <pre>{topicResult}</pre>
+              <pre>{pipelineResult}</pre>
             </div>
           )}
         </article>
       </div>
 
       <div className={styles.sectionIntro}>
-        <span className={styles.kicker}>Force extract</span>
-        <h3>Force AI to analyze a specific paper</h3>
+        <span className={styles.kicker}>Analysis Reports</span>
+        <h3>View Generated Topic Reports</h3>
       </div>
 
       <div className={styles.actionGrid}>
         <article className={`${styles.card} ${styles.wideCard}`}>
           <div className={styles.cardHeader}>
             <div>
-              <h3>Force AI Extract — Search by paper title</h3>
+              <h3>Fetch Topic Data</h3>
+            </div>
+          </div>
+          <p className={styles.cardText}>
+            View the extracted gap trends, patterns, coverage, and quality for a topic.
+          </p>
+
+          <div className={styles.topicForm} style={{ alignItems: 'flex-end', marginBottom: '16px' }}>
+            <label>
+              Topic ID
+              <select
+                value={reportTopicId}
+                onChange={(event) => setReportTopicId(event.target.value)}
+                disabled={reportLoading || topicsLoading}
+              >
+                <option value="">-- Select a topic --</option>
+                {topics.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Gap Trends", getTopicGapTrends)}>Trends</button>
+              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Patterns", getTopicPatterns)}>Patterns</button>
+              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Coverage", getTopicCoverage)}>Coverage</button>
+              <button type="button" className={styles.secondaryButton} disabled={reportLoading} onClick={() => handleFetchReport("Quality", getTopicQuality)}>Quality</button>
             </div>
           </div>
 
-          <p className={styles.cardText}>
-            Ép AI đọc và phân tích ngay bài báo bất kỳ. Tìm theo tên bài báo, chọn đúng bài, sau đó bấm Force AI Extract.
-          </p>
-
-          <form className={styles.topicForm} onSubmit={handleForceAiExtractPaper}>
-            <label style={{ flex: 1, position: "relative" }}>
-              Tìm bài báo
-              <input
-                type="text"
-                placeholder="Nhập tên bài báo..."
-                value={forceAiSearch}
-                onChange={handleForceAiSearchChange}
-                disabled={forceAiLoading}
-                autoComplete="off"
-                style={{ width: "100%" }}
-              />
-              {forceAiSearchLoading && (
-                <span style={{ position: "absolute", right: "10px", top: "50%", fontSize: "0.75rem", color: "#94a3b8" }}>Đang tìm…</span>
-              )}
-              {forceAiSearchResults.length > 0 && (
-                <ul style={{
-                  position: "absolute",
-                  top: "100%",
-                  left: 0,
-                  right: 0,
-                  zIndex: 999,
-                  background: "var(--color-surface, #1e293b)",
-                  border: "1px solid var(--color-border, #334155)",
-                  borderRadius: "8px",
-                  maxHeight: "240px",
-                  overflowY: "auto",
-                  margin: "4px 0 0",
-                  padding: 0,
-                  listStyle: "none",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
-                }}>
-                  {forceAiSearchResults.map((paper) => (
-                    <li
-                      key={paper.id}
-                      onClick={() => handleForceAiSelectPaper(paper)}
-                      style={{
-                        padding: "10px 14px",
-                        cursor: "pointer",
-                        borderBottom: "1px solid var(--color-border, #334155)",
-                        fontSize: "0.82rem",
-                        lineHeight: 1.4,
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(99,102,241,0.15)"}
-                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                    >
-                      <strong style={{ display: "block" }}>{paper.title}</strong>
-                      <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
-                        {paper.year} · {paper.authors?.[0] ?? "Unknown"}{paper.authors?.length > 1 ? ` +${paper.authors.length - 1}` : ""}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </label>
-            <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={forceAiLoading || !forceAiSelectedPaper}
-            >
-              {forceAiLoading ? "🤖 AI đang đọc…" : "🤖 Force AI Extract"}
-            </button>
-          </form>
-
-          {forceAiSelectedPaper && !forceAiResult && (
-            <p style={{ marginTop: "8px", fontSize: "0.8rem", color: "#6366f1", fontWeight: 600 }}>
-              ✓ Đã chọn: <em>{forceAiSelectedPaper.title}</em> (ID: {forceAiSelectedPaper.id})
-            </p>
-          )}
-
-          {forceAiError && (
+          {reportError && (
             <div className={styles.errorBox} role="alert">
-              {forceAiError}
+              {reportError}
             </div>
           )}
 
-          {forceAiResult && (
+          {reportResult && (
             <div className={styles.resultBox}>
-              <span>Kết quả</span>
-              <pre style={{ whiteSpace: "pre-wrap" }}>
-{`✓ Paper #${forceAiResult.paperId}: ${forceAiResult.title}
-Confidence : ${forceAiResult.confidence}%
-Problem    : ${forceAiResult.researchProblem || "—"}
-Methods    : ${(forceAiResult.methods ?? []).join(", ") || "—"}
-Datasets   : ${(forceAiResult.datasets ?? []).join(", ") || "—"}
-Limitations: ${(forceAiResult.limitations ?? []).slice(0, 3).join(" | ") || "—"}
-Future Work: ${(forceAiResult.futureWork ?? []).slice(0, 2).join(" | ") || "—"}`}
-              </pre>
+              <span>Report Data</span>
+              <pre>{reportResult}</pre>
             </div>
           )}
         </article>

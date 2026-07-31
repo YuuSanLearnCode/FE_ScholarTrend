@@ -124,7 +124,6 @@ function SearchPage() {
               >
                 <option value="All">All fields</option>
                 <option value="Title">Title</option>
-                <option value="Abstract">Abstract</option>
                 <option value="Author">Author</option>
                 <option value="Keyword">Keyword</option>
                 <option value="Journal">Journal</option>
