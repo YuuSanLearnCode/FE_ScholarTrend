@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { getFiles, uploadFile, deleteFile, downloadFile } from '../../services/fileService'
 import { searchPapers } from '../../services/paperService'
 import Skeleton from '../../components/Skeleton'
+import PremiumGate from '../../components/PremiumGate'
 import styles from './documentsTab.module.css'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -47,6 +49,7 @@ export default function DocumentsTab() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [isPremium, setIsPremium] = useState(false)
 
   // Upload states
   const [selectedFile, setSelectedFile] = useState(null)
@@ -74,7 +77,12 @@ export default function DocumentsTab() {
       const response = await getFiles({ pageSize: 50, category: 'document' })
       setFiles(response.items || [])
     } catch (err) {
-      setError(err.message || 'Failed to load documents.')
+      const status = err.response?.status
+      if (status === 403 || status === 401) {
+        setIsPremium(true)
+      } else {
+        setError(err.message || 'Failed to load documents.')
+      }
     } finally {
       setLoading(false)
     }
@@ -231,6 +239,14 @@ export default function DocumentsTab() {
 
   return (
     <div className={styles.container}>
+      {isPremium ? (
+        <PremiumGate
+          title="Premium Feature"
+          message="Document management is only available for Researcher subscriptions and Admins. Upgrade your plan to upload, organize, and link research documents."
+        />
+      ) : (
+        <>
+
       {/* Upload Section */}
       <section className={styles.uploadCard}>
         <h2>Upload New Document</h2>
@@ -378,7 +394,6 @@ export default function DocumentsTab() {
         )}
       </section>
 
-      {/* Delete Dialog Overlay */}
       {fileToDelete && (
         <div className={styles.dialogOverlay}>
           <div className={styles.dialogContent}>
@@ -395,6 +410,9 @@ export default function DocumentsTab() {
           </div>
         </div>
       )}
+        </>
+      )}
     </div>
   )
 }
+

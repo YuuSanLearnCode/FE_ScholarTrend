@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   assessGapAnalysisQuality,
   assessTopicGapAnalysisQuality,
@@ -11,6 +11,7 @@ import {
   regenerateTopicGapAnalysisGaps,
   runTopicGapAnalysisPipeline,
   getTopicGapAnalysisPipelineJob,
+  extractPaperWithAI,
 } from "../../services/adminService";
 import {
   getTopicPatterns,
@@ -19,6 +20,7 @@ import {
   getTopicQuality,
   getTopics,
 } from "../../services/topicService";
+import { searchPapers } from "../../services/paperService";
 import styles from "./AdminGapAnalysisPage.module.css";
 
 function getErrorMessage(error, fallbackMessage) {
@@ -88,6 +90,15 @@ function AdminGapAnalysisPage() {
   const [globalError, setGlobalError] = useState("");
   const [topicError, setTopicError] = useState("");
   const [runHistory, setRunHistory] = useState([]);
+
+  const [forceAiSearch, setForceAiSearch] = useState("");
+  const [forceAiSearchResults, setForceAiSearchResults] = useState([]);
+  const [forceAiSearchLoading, setForceAiSearchLoading] = useState(false);
+  const [forceAiSelectedPaper, setForceAiSelectedPaper] = useState(null);
+  const [forceAiLoading, setForceAiLoading] = useState(false);
+  const [forceAiResult, setForceAiResult] = useState(null);
+  const [forceAiError, setForceAiError] = useState("");
+  const forceAiSearchTimer = useRef(null);
 
   const [topics, setTopics] = useState([]);
   const [topicsLoading, setTopicsLoading] = useState(true);
@@ -343,6 +354,54 @@ function AdminGapAnalysisPage() {
       );
     } finally {
       setTopicLoading(false);
+    }
+  };
+
+  const handleForceAiSearchChange = (e) => {
+    const val = e.target.value;
+    setForceAiSearch(val);
+    setForceAiSelectedPaper(null);
+    setForceAiResult(null);
+    setForceAiError("");
+    if (forceAiSearchTimer.current) clearTimeout(forceAiSearchTimer.current);
+    if (!val.trim()) { setForceAiSearchResults([]); return; }
+    forceAiSearchTimer.current = setTimeout(async () => {
+      setForceAiSearchLoading(true);
+      try {
+        const res = await searchPapers({ query: val, pageSize: 8 });
+        setForceAiSearchResults(res.items ?? []);
+      } catch {
+        setForceAiSearchResults([]);
+      } finally {
+        setForceAiSearchLoading(false);
+      }
+    }, 400);
+  };
+
+  const handleForceAiSelectPaper = (paper) => {
+    setForceAiSelectedPaper(paper);
+    setForceAiSearch(paper.title);
+    setForceAiSearchResults([]);
+    setForceAiResult(null);
+    setForceAiError("");
+  };
+
+  const handleForceAiExtractPaper = async (event) => {
+    event.preventDefault();
+    if (!forceAiSelectedPaper) return;
+    setForceAiLoading(true);
+    setForceAiError("");
+    setForceAiResult(null);
+    try {
+      const result = await extractPaperWithAI(forceAiSelectedPaper.id);
+      setForceAiResult(result);
+      addRunHistory(`Force AI extract: ${forceAiSelectedPaper.title}`, result);
+    } catch (error) {
+      setForceAiError(
+        getErrorMessage(error, "Could not force AI extract for this paper."),
+      );
+    } finally {
+      setForceAiLoading(false);
     }
   };
 
@@ -875,6 +934,116 @@ function AdminGapAnalysisPage() {
             <div className={styles.resultBox}>
               <span>Response</span>
               <pre>{topicResult}</pre>
+            </div>
+          )}
+        </article>
+      </div>
+
+      <div className={styles.sectionIntro}>
+        <span className={styles.kicker}>Force extract</span>
+        <h3>Force AI to analyze a specific paper</h3>
+      </div>
+
+      <div className={styles.actionGrid}>
+        <article className={`${styles.card} ${styles.wideCard}`}>
+          <div className={styles.cardHeader}>
+            <div>
+              <h3>Force AI Extract — Search by paper title</h3>
+            </div>
+          </div>
+
+          <p className={styles.cardText}>
+            Ép AI đọc và phân tích ngay bài báo bất kỳ. Tìm theo tên bài báo, chọn đúng bài, sau đó bấm Force AI Extract.
+          </p>
+
+          <form className={styles.topicForm} onSubmit={handleForceAiExtractPaper}>
+            <label style={{ flex: 1, position: "relative" }}>
+              Tìm bài báo
+              <input
+                type="text"
+                placeholder="Nhập tên bài báo..."
+                value={forceAiSearch}
+                onChange={handleForceAiSearchChange}
+                disabled={forceAiLoading}
+                autoComplete="off"
+                style={{ width: "100%" }}
+              />
+              {forceAiSearchLoading && (
+                <span style={{ position: "absolute", right: "10px", top: "50%", fontSize: "0.75rem", color: "#94a3b8" }}>Đang tìm…</span>
+              )}
+              {forceAiSearchResults.length > 0 && (
+                <ul style={{
+                  position: "absolute",
+                  top: "100%",
+                  left: 0,
+                  right: 0,
+                  zIndex: 999,
+                  background: "var(--color-surface, #1e293b)",
+                  border: "1px solid var(--color-border, #334155)",
+                  borderRadius: "8px",
+                  maxHeight: "240px",
+                  overflowY: "auto",
+                  margin: "4px 0 0",
+                  padding: 0,
+                  listStyle: "none",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.3)",
+                }}>
+                  {forceAiSearchResults.map((paper) => (
+                    <li
+                      key={paper.id}
+                      onClick={() => handleForceAiSelectPaper(paper)}
+                      style={{
+                        padding: "10px 14px",
+                        cursor: "pointer",
+                        borderBottom: "1px solid var(--color-border, #334155)",
+                        fontSize: "0.82rem",
+                        lineHeight: 1.4,
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(99,102,241,0.15)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                    >
+                      <strong style={{ display: "block" }}>{paper.title}</strong>
+                      <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>
+                        {paper.year} · {paper.authors?.[0] ?? "Unknown"}{paper.authors?.length > 1 ? ` +${paper.authors.length - 1}` : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </label>
+            <button
+              type="submit"
+              className={styles.primaryButton}
+              disabled={forceAiLoading || !forceAiSelectedPaper}
+            >
+              {forceAiLoading ? "🤖 AI đang đọc…" : "🤖 Force AI Extract"}
+            </button>
+          </form>
+
+          {forceAiSelectedPaper && !forceAiResult && (
+            <p style={{ marginTop: "8px", fontSize: "0.8rem", color: "#6366f1", fontWeight: 600 }}>
+              ✓ Đã chọn: <em>{forceAiSelectedPaper.title}</em> (ID: {forceAiSelectedPaper.id})
+            </p>
+          )}
+
+          {forceAiError && (
+            <div className={styles.errorBox} role="alert">
+              {forceAiError}
+            </div>
+          )}
+
+          {forceAiResult && (
+            <div className={styles.resultBox}>
+              <span>Kết quả</span>
+              <pre style={{ whiteSpace: "pre-wrap" }}>
+{`✓ Paper #${forceAiResult.paperId}: ${forceAiResult.title}
+Confidence : ${forceAiResult.confidence}%
+Problem    : ${forceAiResult.researchProblem || "—"}
+Methods    : ${(forceAiResult.methods ?? []).join(", ") || "—"}
+Datasets   : ${(forceAiResult.datasets ?? []).join(", ") || "—"}
+Limitations: ${(forceAiResult.limitations ?? []).slice(0, 3).join(" | ") || "—"}
+Future Work: ${(forceAiResult.futureWork ?? []).slice(0, 2).join(" | ") || "—"}`}
+              </pre>
             </div>
           )}
         </article>

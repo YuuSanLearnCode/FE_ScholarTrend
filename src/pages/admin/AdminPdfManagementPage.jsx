@@ -367,11 +367,11 @@ export default function AdminPdfManagementPage() {
       </div>
 
       {actionResult && (
-        <div className={styles.actionSuccess}>
-          <span className={styles.successDot}>✓</span>
+        <div className={actionResult.type === "batch" || actionResult.status === "Extracted" ? styles.actionSuccess : styles.errorBox}>
+          {(actionResult.type === "batch" || actionResult.status === "Extracted") && <span className={styles.successDot}>✓</span>}
           {actionResult.type === "single" ? (
             <>
-              <strong>Paper #{actionResult.paperId}</strong> extracted —{" "}
+              <strong>Paper #{actionResult.paperId}</strong> {actionResult.status === "Extracted" ? "extracted" : "failed"} —{" "}
               {actionResult.chars.toLocaleString()} characters indexed.
             </>
           ) : (

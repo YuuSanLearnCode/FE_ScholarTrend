@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   CartesianGrid,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -30,6 +31,7 @@ function formatNumber(value) {
 
 function JournalDetailPage() {
   const { journalId } = useParams()
+  const navigate = useNavigate()
   const [journal, setJournal] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -96,9 +98,21 @@ function JournalDetailPage() {
     }
   }
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+    navigate('/search')
+  }
+
   if (loading) {
     return (
       <section className={styles.page}>
+        <button type="button" className={styles.backButton} onClick={handleBack}>
+          <span aria-hidden="true">&larr;</span>
+          Back
+        </button>
         <Skeleton variant="title" width="45%" />
         <div className={styles.loadingChart}><Skeleton variant="chart" /></div>
         <Skeleton variant="card" count={3} />
@@ -109,6 +123,10 @@ function JournalDetailPage() {
   if (error || !journal) {
     return (
       <section className={styles.page}>
+        <button type="button" className={styles.backButton} onClick={handleBack}>
+          <span aria-hidden="true">&larr;</span>
+          Back
+        </button>
         <div className={styles.errorState}>
           <strong>Journal could not be loaded</strong>
           <p>{error}</p>
@@ -125,6 +143,12 @@ function JournalDetailPage() {
 
   return (
     <section className={styles.page}>
+      <div>
+        <button type="button" className={styles.backButton} onClick={handleBack}>
+          <span aria-hidden="true">&larr;</span>
+          Back
+        </button>
+      </div>
       <header className={styles.hero}>
         <div>
           <span className={styles.eyebrow}>Academic journal</span>
@@ -197,10 +221,12 @@ function JournalDetailPage() {
               <LineChart data={trendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="period" stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11 }} />
-                <YAxis stroke="#cbd5e1" tick={{ fill: '#475569', fontSize: 11 }} />
+                <YAxis yAxisId="papers" stroke="#1e40af" tick={{ fill: '#475569', fontSize: 11 }} />
+                <YAxis yAxisId="citations" orientation="right" stroke="#0891b2" tick={{ fill: '#475569', fontSize: 11 }} />
                 <Tooltip contentStyle={{ border: '1px solid #e2e8f0', borderRadius: 10 }} />
-                <Line type="monotone" dataKey="paperCount" name="Papers" stroke="#1e40af" strokeWidth={3} dot={{ r: 3 }} />
-                <Line type="monotone" dataKey="citationCount" name="Citations" stroke="#0891b2" strokeWidth={3} dot={{ r: 3 }} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line yAxisId="papers" type="monotone" dataKey="paperCount" name="Papers" stroke="#1e40af" strokeWidth={3} dot={{ r: 3 }} />
+                <Line yAxisId="citations" type="monotone" dataKey="citationCount" name="Citations" stroke="#0891b2" strokeWidth={3} dot={{ r: 3 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (

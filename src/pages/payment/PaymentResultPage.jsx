@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { refreshAuthToken } from '../../services/authService';
+import api from '../../services/api';
 import styles from './PaymentResultPage.module.css';
 
 const PaymentResultPage = () => {
@@ -21,6 +23,48 @@ const PaymentResultPage = () => {
       cancel === 'false'
     );
 
+  const [isVerifying, setIsVerifying] = useState(isSuccess);
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const verifyPayment = async () => {
+      if (!isSuccess) return;
+      
+      // Poll /auth/profile until role changes to Researcher, max 5 attempts (10 seconds)
+      let roleUpdated = false;
+      const initialRole = localStorage.getItem('userRole');
+      
+      if (initialRole === 'Researcher' || initialRole === 'Admin') {
+        roleUpdated = true;
+      } else {
+        for (let i = 0; i < 5; i++) {
+          try {
+            const { data: response } = await api.get('/auth/profile');
+            const roles = response.data?.roles || [];
+            if (roles.includes('Researcher') || roles.includes('Admin')) {
+              roleUpdated = true;
+              break;
+            }
+          } catch (e) {
+             // Ignore errors
+          }
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+      
+      // Always refresh token at the end to get the new role into the JWT
+      if (isMounted) {
+        await refreshAuthToken();
+        setIsVerifying(false);
+      }
+    };
+    
+    verifyPayment();
+    
+    return () => { isMounted = false; };
+  }, [isSuccess]);
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -32,14 +76,29 @@ const PaymentResultPage = () => {
               </svg>
             </div>
             <h1 className={styles.title}>Payment Successful!</h1>
-            <p className={styles.message}>
-              Thank you for subscribing to ScholarTrend Premium. Your transaction has been completed successfully and your new features are now unlocked.
-            </p>
-            <div className={styles.actions}>
-              <Link to="/dashboard" className={`${styles.btn} ${styles.btnPrimary}`}>
-                Go to Dashboard
-              </Link>
-            </div>
+            {isVerifying ? (
+              <>
+                <p className={styles.message}>
+                  Finalizing your subscription... Please wait a moment.
+                </p>
+                <div className={styles.actions}>
+                  <button disabled className={`${styles.btn} ${styles.btnPrimary}`}>
+                    Processing...
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className={styles.message}>
+                  Thank you for subscribing to ScholarTrend Premium. Your transaction has been completed successfully and your new features are now unlocked.
+                </p>
+                <div className={styles.actions}>
+                  <Link to="/dashboard" className={`${styles.btn} ${styles.btnPrimary}`}>
+                    Go to Dashboard
+                  </Link>
+                </div>
+              </>
+            )}
           </>
         ) : (
           <>

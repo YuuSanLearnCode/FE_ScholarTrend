@@ -169,6 +169,26 @@ export async function resetPassword({ email, token, newPassword, confirmNewPassw
   return response
 }
 
+// Refresh Auth Token
+export async function refreshAuthToken() {
+  const refreshToken = localStorage.getItem('refreshToken')
+  if (!refreshToken) return null;
+
+  try {
+    const { data: response } = await api.post('/auth/refresh-token', {
+      refreshToken
+    })
+
+    if (response.success && response.data?.token) {
+      persistAuthSession(response.data)
+      return response.data
+    }
+  } catch (err) {
+    console.error('Failed to refresh token', err)
+  }
+  return null
+}
+
 export function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('refreshToken')

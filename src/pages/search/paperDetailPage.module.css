@@ -720,6 +720,15 @@
   font-weight: 650;
 }
 
+.journalDetails dd a {
+  color: var(--color-brand);
+  text-decoration: none;
+}
+
+.journalDetails dd a:hover {
+  text-decoration: underline;
+}
+
 .mutedText {
   color: var(--color-text-muted);
   font-size: 0.75rem;
@@ -825,4 +834,53 @@
   .author {
     width: 100%;
   }
+}
+
+/* ── Force AI Extract (Admin only) ── */
+.forceAiBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border: 1.5px solid #6366f1;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.forceAiBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  filter: brightness(1.05);
+}
+
+.forceAiBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.forceAiHint {
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.forceAiError {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.forceAiSuccess {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: #22c55e;
+  font-weight: 600;
 }

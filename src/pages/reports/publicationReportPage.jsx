@@ -12,6 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import Skeleton from '../../components/Skeleton'
+import PremiumGate from '../../components/PremiumGate'
 import {
   buildReportCsv,
   buildReportJson,
@@ -330,7 +331,7 @@ function PublicationReportPage({ embedded = false }) {
           />
         </label>
         <div className={styles.buttonGroup}>
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading || errorCode === 403 || errorCode === 401}>
             {loading ? 'Generating...' : 'Generate report'}
           </button>
           <button
@@ -364,41 +365,18 @@ function PublicationReportPage({ embedded = false }) {
       )}
 
       {errorCode === 403 && (
-        <div className={styles.upgradeBox}>
-          <div className={styles.upgradeIcon}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-            </svg>
-          </div>
-          <div className={styles.upgradeContent}>
-            <h3>Premium Feature</h3>
-            <p>
-              Publication reports are only available for Researcher subscriptions and Admins. Upgrade
-              your plan to unlock deep research analytics, exporting, and more.
-            </p>
-          </div>
-          <Link to="/pricing" className={styles.upgradeBtn}>
-            View Subscription Plans
-          </Link>
-        </div>
+        <PremiumGate
+          title="Premium Feature"
+          message="Publication reports are only available for Researcher subscriptions and Admins. Upgrade your plan to unlock deep research analytics, exporting, and more."
+        />
       )}
 
       {errorCode === 401 && (
-        <div className={styles.upgradeBox}>
-          <div className={styles.upgradeIcon}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
-          </div>
-          <div className={styles.upgradeContent}>
-            <h3>Sign in required</h3>
-            <p>You need to be logged in to access advanced reporting features.</p>
-          </div>
-          <Link to="/login" className={styles.upgradeBtn}>
-            Sign In
-          </Link>
-        </div>
+        <PremiumGate
+          title="Sign in required"
+          message="You need to be logged in to access advanced reporting features."
+          to="/login"
+        />
       )}
 
       {loading && !report ? (

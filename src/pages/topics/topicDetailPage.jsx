@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   CartesianGrid,
   Line,
@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
+import PremiumGate from '../../components/PremiumGate'
 import {
   followTopic,
   getFollowedTopics,
@@ -97,8 +98,8 @@ function TopicDetailPage() {
   const [selectedGapId, setSelectedGapId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [gapError, setGapError] = useState('')
-  const [gapListError, setGapListError] = useState('')
+  const [gapError, setGapError] = useState(null)   // { isPremium, message } | null
+  const [gapListError, setGapListError] = useState(null)
   const [gapDetailError, setGapDetailError] = useState('')
   const [gapEvidenceError, setGapEvidenceError] = useState('')
   const [gapDetailLoading, setGapDetailLoading] = useState(false)
@@ -121,8 +122,8 @@ function TopicDetailPage() {
       setSelectedGapDetail(null)
       setSelectedGapEvidences(null)
       setSelectedGapId(null)
-      setGapError('')
-      setGapListError('')
+      setGapError(null)
+      setGapListError(null)
       setGapDetailError('')
       setGapEvidenceError('')
       setFollowError('')
@@ -147,40 +148,34 @@ function TopicDetailPage() {
           setGapDashboard(gapsResponse.value)
         } else {
           setGapDashboard(null)
-          if (
+          const is403 =
             gapsResponse.reason?.response?.status === 403 ||
             gapsResponse.reason?.message?.includes('403')
-          ) {
-            setGapError(
-              '⭐ Premium Feature: Please upgrade to a Researcher account to unlock and view the Generated Gap Analysis.',
-            )
-          } else {
-            setGapError(
-              gapsResponse.reason?.response?.data?.message ||
+          setGapError({
+            isPremium: is403,
+            message: is403
+              ? null
+              : gapsResponse.reason?.response?.data?.message ||
                 gapsResponse.reason?.message ||
                 'Could not load topic gap dashboard.',
-            )
-          }
+          })
         }
 
         if (gapListResponse.status === 'fulfilled') {
           setGapList(gapListResponse.value)
         } else {
           setGapList(null)
-          if (
+          const is403List =
             gapListResponse.reason?.response?.status === 403 ||
             gapListResponse.reason?.message?.includes('403')
-          ) {
-            setGapListError(
-              '⭐ Premium Feature: Please upgrade to a Researcher account to view research opportunities.',
-            )
-          } else {
-            setGapListError(
-              gapListResponse.reason?.response?.data?.message ||
+          setGapListError({
+            isPremium: is403List,
+            message: is403List
+              ? null
+              : gapListResponse.reason?.response?.data?.message ||
                 gapListResponse.reason?.message ||
                 'Could not load topic gap list.',
-            )
-          }
+          })
         }
         setGapLoading(false)
 
@@ -222,9 +217,11 @@ function TopicDetailPage() {
   }, [topicId])
 
   const handleGenerateGaps = async ({ force = true } = {}) => {
+    if (gapError?.isPremium) return
+
     setGapGenerating(true)
     setGapJobMessage('Queuing gap generation...')
-    setGapError('')
+    setGapError(null)
     try {
       const job = await requestTopicGapGeneration(topicId, { force })
       const jobId = job?.jobId
@@ -249,11 +246,11 @@ function TopicDetailPage() {
           ])
           if (gapsResponse.status === 'fulfilled') {
             setGapDashboard(gapsResponse.value)
-            setGapError('')
+            setGapError(null)
           }
           if (gapListResponse.status === 'fulfilled') {
             setGapList(gapListResponse.value)
-            setGapListError('')
+            setGapListError(null)
           }
           setGapJobMessage(`Done — ${status.gapCount ?? 0} gaps generated.`)
           return
@@ -266,11 +263,13 @@ function TopicDetailPage() {
 
       throw new Error('Gap generation timed out. Check Hangfire or try again later.')
     } catch (err) {
-      setGapError(
-        err.response?.data?.message ||
+      setGapError({
+        isPremium: false,
+        message:
+          err.response?.data?.message ||
           err.message ||
           'Could not generate research gaps.',
-      )
+      })
       setGapJobMessage('')
     } finally {
       setGapGenerating(false)
@@ -515,8 +514,26 @@ function TopicDetailPage() {
           </p>
         )}
 
-        {gapError && <p className={styles.insightsError}>{gapError}</p>}
-        {gapListError && <p className={styles.insightsError}>{gapListError}</p>}
+        {gapError && (
+          gapError.isPremium ? (
+            <PremiumGate
+              title="Premium Feature"
+              message="Gap analysis is only available for Researcher subscriptions and Admins. Upgrade your plan to unlock AI-powered research gap detection."
+            />
+          ) : (
+            <p className={styles.insightsError}>{gapError.message}</p>
+          )
+        )}
+        {gapListError && !gapError?.isPremium && (
+          gapListError.isPremium ? (
+            <PremiumGate
+              title="Premium Feature"
+              message="Research opportunity lists are only available for Researcher subscriptions and Admins. Upgrade your plan to access them."
+            />
+          ) : (
+            <p className={styles.insightsError}>{gapListError.message}</p>
+          )
+        )}
 
         {!gapLoading && hasGapContent ? (
           <>

@@ -646,7 +646,7 @@ function TrendChartPage() {
                     <YAxis
                       yAxisId="papers"
                       allowDecimals={false}
-                      stroke="#1e40af"
+                      stroke="#16a34a"
                       tick={{ fill: '#475569', fontSize: 11 }}
                     />
                     <YAxis

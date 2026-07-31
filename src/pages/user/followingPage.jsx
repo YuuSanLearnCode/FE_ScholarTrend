@@ -86,7 +86,6 @@ function FollowingPage() {
   }, [])
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
     async function fetchFollowing() {
       setLoading(true)
       setError('')
