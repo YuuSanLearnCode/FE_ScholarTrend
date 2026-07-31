@@ -289,6 +289,10 @@ function PaperDetailPage() {
               >
                 {paper.journalName}
               </Link>
+            ) : paper.journalName && paper.journalName !== 'Unknown journal' ? (
+              <Link to={`/search/results?query=${encodeURIComponent(paper.journalName)}&searchType=Journal&page=1&pageSize=10`}>
+                {paper.journalName}
+              </Link>
             ) : (
               <span>{paper.journalName}</span>
             )}
@@ -656,7 +660,17 @@ function PaperDetailPage() {
             <dl className={styles.journalDetails}>
               <div>
                 <dt>Journal</dt>
-                <dd>{paper.journalName}</dd>
+                <dd>
+                  {paper.journal?.id ? (
+                    <Link to={`/journals/${paper.journal.id}`}>{paper.journalName}</Link>
+                  ) : paper.journalName && paper.journalName !== 'Unknown journal' ? (
+                    <Link to={`/search/results?query=${encodeURIComponent(paper.journalName)}&searchType=Journal&page=1&pageSize=10`}>
+                      {paper.journalName}
+                    </Link>
+                  ) : (
+                    paper.journalName
+                  )}
+                </dd>
               </div>
               <div>
                 <dt>ISSN</dt>

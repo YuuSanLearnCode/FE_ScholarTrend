@@ -14,6 +14,7 @@ import SearchResultsPage from "./pages/search/searchResultsPage";
 import PaperDetailPage from "./pages/search/paperDetailPage";
 import AuthorDetailPage from "./pages/search/authorDetailPage";
 import AuthorsPage from "./pages/authors/authorsPage";
+import JournalsPage from "./pages/journals/journalsPage";
 import JournalDetailPage from "./pages/journals/journalDetailPage";
 import TopicDetailPage from "./pages/topics/topicDetailPage";
 import TopicsPage from "./pages/topics/topicsPage";
@@ -114,6 +115,7 @@ function App() {
         { path: "authors", element: <AuthorsPage /> },
         { path: "authors/id/:authorId", element: <AuthorDetailPage /> },
         { path: "authors/:authorName", element: <AuthorDetailPage /> },
+        { path: "journals", element: <JournalsPage /> },
         { path: "journals/:journalId", element: <JournalDetailPage /> },
         { path: "topics", element: <TopicsPage /> },
         { path: "topics/:topicId", element: <TopicDetailPage /> },

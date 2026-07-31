@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   CartesianGrid,
   Line,
@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import SearchResultsList from '../../components/SearchResultsList'
 import Skeleton from '../../components/Skeleton'
+import PremiumGate from '../../components/PremiumGate'
 import {
   followTopic,
   getFollowedTopics,
@@ -20,8 +21,10 @@ import {
   getTopicById,
   getTopicGapById,
   getTopicGapEvidences,
+  getTopicGapGenerationJob,
   getTopicGapList,
   getTopicGaps,
+  requestTopicGapGeneration,
 } from '../../services/topicService'
 import styles from './topicDetailPage.module.css'
 
@@ -95,8 +98,8 @@ function TopicDetailPage() {
   const [selectedGapId, setSelectedGapId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [gapError, setGapError] = useState('')
-  const [gapListError, setGapListError] = useState('')
+  const [gapError, setGapError] = useState(null)   // { isPremium, message } | null
+  const [gapListError, setGapListError] = useState(null)
   const [gapDetailError, setGapDetailError] = useState('')
   const [gapEvidenceError, setGapEvidenceError] = useState('')
   const [gapDetailLoading, setGapDetailLoading] = useState(false)
@@ -104,9 +107,14 @@ function TopicDetailPage() {
   const [isFollowing, setIsFollowing] = useState(false)
   const [followLoading, setFollowLoading] = useState(false)
   const [followError, setFollowError] = useState('')
+  const [gapGenerating, setGapGenerating] = useState(false)
+  const [gapJobMessage, setGapJobMessage] = useState('')
+  const [gapLoading, setGapLoading] = useState(false)
 
   useEffect(() => {
-    async function fetchTopic() {
+    let cancelled = false
+
+    async function fetchTopicCore() {
       setLoading(true)
       setError('')
       setGapDashboard(null)
@@ -114,73 +122,82 @@ function TopicDetailPage() {
       setSelectedGapDetail(null)
       setSelectedGapEvidences(null)
       setSelectedGapId(null)
-      setGapError('')
-      setGapListError('')
+      setGapError(null)
+      setGapListError(null)
       setGapDetailError('')
       setGapEvidenceError('')
       setFollowError('')
       setIsFollowing(false)
+      setGapJobMessage('')
+
       try {
-        const hasToken = Boolean(localStorage.getItem('token'))
-        const [topicResponse, gapsResponse, gapListResponse] = await Promise.allSettled([
-          getTopicById(topicId),
+        const topicResult = await getTopicById(topicId)
+        if (cancelled) return
+        setTopic(topicResult)
+        setLoading(false)
+
+        // Gaps load after hero/topic — do not keep full-page skeleton waiting on gaps.
+        setGapLoading(true)
+        const [gapsResponse, gapListResponse] = await Promise.allSettled([
           getTopicGaps(topicId),
           getTopicGapList(topicId),
         ])
-
-        if (topicResponse.status === 'rejected') {
-          throw topicResponse.reason
-        }
-
-        const topicResult = topicResponse.value
-        setTopic(topicResult)
+        if (cancelled) return
 
         if (gapsResponse.status === 'fulfilled') {
           setGapDashboard(gapsResponse.value)
         } else {
           setGapDashboard(null)
-          if (gapsResponse.reason?.response?.status === 403 || gapsResponse.reason?.message?.includes('403')) {
-            setGapError('⭐ Premium Feature: Please upgrade to a Researcher account to unlock and view the Generated Gap Analysis.')
-          } else {
-            setGapError(
-              gapsResponse.reason?.response?.data?.message ||
-              gapsResponse.reason?.message ||
-              'Could not load topic gap dashboard.',
-            )
-          }
+          const is403 =
+            gapsResponse.reason?.response?.status === 403 ||
+            gapsResponse.reason?.message?.includes('403')
+          setGapError({
+            isPremium: is403,
+            message: is403
+              ? null
+              : gapsResponse.reason?.response?.data?.message ||
+                gapsResponse.reason?.message ||
+                'Could not load topic gap dashboard.',
+          })
         }
 
         if (gapListResponse.status === 'fulfilled') {
           setGapList(gapListResponse.value)
         } else {
           setGapList(null)
-          if (gapListResponse.reason?.response?.status === 403 || gapListResponse.reason?.message?.includes('403')) {
-            setGapListError('⭐ Premium Feature: Please upgrade to a Researcher account to view research opportunities.')
-          } else {
-            setGapListError(
-              gapListResponse.reason?.response?.data?.message ||
-              gapListResponse.reason?.message ||
-              'Could not load topic gap list.',
-            )
-          }
+          const is403List =
+            gapListResponse.reason?.response?.status === 403 ||
+            gapListResponse.reason?.message?.includes('403')
+          setGapListError({
+            isPremium: is403List,
+            message: is403List
+              ? null
+              : gapListResponse.reason?.response?.data?.message ||
+                gapListResponse.reason?.message ||
+                'Could not load topic gap list.',
+          })
         }
+        setGapLoading(false)
 
-        if (hasToken) {
+        if (localStorage.getItem('token')) {
           try {
-            const followedResult = await getFollowedTopics({ page: 1, pageSize: 1000 })
+            const followedResult = await getFollowedTopics({ page: 1, pageSize: 100 })
+            if (cancelled) return
             const followedTopics = followedResult?.items ?? []
             setIsFollowing(
               followedTopics.some((item) => Number(item.id) === Number(topicId)),
             )
           } catch (followErr) {
+            if (cancelled) return
             setFollowError(
               followErr.response?.data?.message ||
-              followErr.message ||
-              'Could not load follow status.',
+                followErr.message ||
+                'Could not load follow status.',
             )
           }
         }
       } catch (err) {
+        if (cancelled) return
         setError(err.response?.data?.message || err.message || 'Failed to load topic details.')
         setTopic(null)
         setGapDashboard(null)
@@ -188,13 +205,76 @@ function TopicDetailPage() {
         setSelectedGapDetail(null)
         setSelectedGapEvidences(null)
         setSelectedGapId(null)
-      } finally {
         setLoading(false)
+        setGapLoading(false)
       }
     }
 
-    fetchTopic()
+    fetchTopicCore()
+    return () => {
+      cancelled = true
+    }
   }, [topicId])
+
+  const handleGenerateGaps = async ({ force = true } = {}) => {
+    if (gapError?.isPremium) return
+
+    setGapGenerating(true)
+    setGapJobMessage('Queuing gap generation...')
+    setGapError(null)
+    try {
+      const job = await requestTopicGapGeneration(topicId, { force })
+      const jobId = job?.jobId
+      if (!jobId) {
+        throw new Error('No job id returned from server.')
+      }
+
+      setGapJobMessage(job.message || 'Generating research gaps in the background...')
+
+      const started = Date.now()
+      const maxWaitMs = 10 * 60 * 1000
+
+      while (Date.now() - started < maxWaitMs) {
+        await new Promise((resolve) => setTimeout(resolve, 2500))
+        const status = await getTopicGapGenerationJob(jobId)
+        setGapJobMessage(status?.message || status?.status || 'Working...')
+
+        if (status?.status === 'Completed') {
+          const [gapsResponse, gapListResponse] = await Promise.allSettled([
+            getTopicGaps(topicId),
+            getTopicGapList(topicId),
+          ])
+          if (gapsResponse.status === 'fulfilled') {
+            setGapDashboard(gapsResponse.value)
+            setGapError(null)
+          }
+          if (gapListResponse.status === 'fulfilled') {
+            setGapList(gapListResponse.value)
+            setGapListError(null)
+          }
+          setGapJobMessage(`Done — ${status.gapCount ?? 0} gaps generated.`)
+          return
+        }
+
+        if (status?.status === 'Failed') {
+          throw new Error(status?.message || 'Gap generation failed.')
+        }
+      }
+
+      throw new Error('Gap generation timed out. Check Hangfire or try again later.')
+    } catch (err) {
+      setGapError({
+        isPremium: false,
+        message:
+          err.response?.data?.message ||
+          err.message ||
+          'Could not generate research gaps.',
+      })
+      setGapJobMessage('')
+    } finally {
+      setGapGenerating(false)
+    }
+  }
 
   const handleFollowToggle = async () => {
     setFollowLoading(true)
@@ -398,15 +478,70 @@ function TopicDetailPage() {
             <span className={styles.eyebrow}>Research gaps</span>
             <h2>Generated gap analysis</h2>
           </div>
-          <span className={styles.analyzedAt}>
-            Generated: {formatDateTime(gapDashboard?.generatedAt)}
-          </span>
+          <div className={styles.gapHeaderActions}>
+            <span className={styles.analyzedAt}>
+              Generated: {formatDateTime(gapDashboard?.generatedAt)}
+            </span>
+            {gapDashboard?.sampleCoverageLabel && (
+              <div className={styles.sampleCoverage}>
+                <small>{gapDashboard.sampleCoverageLabel}</small>
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.generateButton}
+              disabled={gapGenerating || loading}
+              onClick={() => handleGenerateGaps({ force: true })}
+            >
+              {gapGenerating
+                ? 'Generating…'
+                : gapDashboard?.needsGeneration
+                  ? 'Generate gaps'
+                  : 'Regenerate gaps'}
+            </button>
+          </div>
         </div>
 
-        {gapError && <p className={styles.insightsError}>{gapError}</p>}
-        {gapListError && <p className={styles.insightsError}>{gapListError}</p>}
+        {gapJobMessage && <p className={styles.gapJobMessage}>{gapJobMessage}</p>}
+        {gapLoading && (
+          <p className={styles.gapJobMessage}>Loading stored gap analysis…</p>
+        )}
+        {gapDashboard?.needsGeneration && !gapGenerating && !gapLoading && (
+          <p className={styles.gapHint}>
+            No stored gaps yet for this topic. Click <strong>Generate gaps</strong> to run AI
+            on papers already analyzed within the Top {gapDashboard.sampleSize || 150} sample
+            (manual regenerate anytime after extracting more).
+          </p>
+        )}
+        {gapDashboard?.isStale && !gapGenerating && !gapLoading && (
+          <p className={styles.gapStale}>
+            Stored gaps may be outdated
+            {gapDashboard.staleReason ? `: ${gapDashboard.staleReason}` : '.'} Consider regenerating.
+          </p>
+        )}
 
-        {hasGapContent ? (
+        {gapError && (
+          gapError.isPremium ? (
+            <PremiumGate
+              title="Premium Feature"
+              message="Gap analysis is only available for Researcher subscriptions and Admins. Upgrade your plan to unlock AI-powered research gap detection."
+            />
+          ) : (
+            <p className={styles.insightsError}>{gapError.message}</p>
+          )
+        )}
+        {gapListError && !gapError?.isPremium && (
+          gapListError.isPremium ? (
+            <PremiumGate
+              title="Premium Feature"
+              message="Research opportunity lists are only available for Researcher subscriptions and Admins. Upgrade your plan to access them."
+            />
+          ) : (
+            <p className={styles.insightsError}>{gapListError.message}</p>
+          )
+        )}
+
+        {!gapLoading && hasGapContent ? (
           <>
             {gapCoverage && (
               <div className={styles.coverageGrid}>
@@ -579,6 +714,8 @@ function TopicDetailPage() {
               </section>
             )}
           </>
+        ) : gapLoading ? (
+          <div className={styles.loadingChart}><Skeleton variant="card" count={2} /></div>
         ) : (
           <p className={styles.emptyInline}>No gap data is available for this topic.</p>
         )}
